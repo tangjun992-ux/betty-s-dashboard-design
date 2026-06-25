@@ -6,7 +6,6 @@ import {
   AlertCircle, ImageOff, RefreshCw,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import toolSeedance from "@/assets/tool-seedance.jpg";
 import toolMotion from "@/assets/tool-motion.jpg";
