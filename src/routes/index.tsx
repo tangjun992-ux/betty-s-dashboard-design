@@ -86,83 +86,86 @@ const creatorExamples = [
 function Dashboard() {
   return (
     <AppShell>
-      <div className="px-6 lg:px-10 py-6 max-w-[1600px] mx-auto space-y-12">
+      <div className="pt-4 pb-12 space-y-10">
+        {/* Banner carousel — flush to top, peeks next slide */}
         <section>
-          <div className="flex gap-4 overflow-x-auto scrollbar-hide -mx-6 lg:-mx-10 px-6 lg:px-10 pb-2">
+          <div className="flex gap-5 overflow-x-auto scrollbar-hide pl-6 lg:pl-8 pr-6 lg:pr-8 pb-1">
             {banners.map((b) => (
-              <a key={b.title} href="#" className="group shrink-0 w-[min(720px,80vw)]">
-                <div className="relative aspect-[16/7] rounded-2xl overflow-hidden border border-border/60">
+              <a key={b.title} href="#" className="group shrink-0 w-[min(760px,calc(100vw-260px))]">
+                <div className="relative aspect-[16/6] rounded-2xl overflow-hidden">
                   <img src={b.image} alt={b.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]" />
                 </div>
-                <div className="mt-3 flex items-baseline gap-3">
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold uppercase tracking-wide ${b.tagClass}`}>{b.tag}</span>
-                  <h3 className="text-[15px] font-medium text-foreground/90 group-hover:text-foreground">{b.title}</h3>
+                <div className="mt-3 flex items-center gap-2.5">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10.5px] font-semibold uppercase tracking-wide ${b.tagClass}`}>{b.tag}</span>
+                  <h3 className="text-[14px] font-medium text-foreground/90 group-hover:text-foreground">{b.title}</h3>
                 </div>
               </a>
             ))}
           </div>
         </section>
 
-        <section>
-          <SectionHeader icon={Bookmark} title="Popular Tools" />
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-3">
-            {popularTools.map((t) => <ToolPill key={t.label} {...t} />)}
-          </div>
-        </section>
-
-        <section>
-          <SectionHeader icon={Film} title="Video Tools" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
-            {videoTools.map((t) => <MediaCard key={t.title} {...t} />)}
-          </div>
-        </section>
-
-        <section>
-          <SectionHeader icon={Brush} title="Image Tools" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
-            {imageTools.map((t) => <MediaCard key={t.title} {...t} />)}
-          </div>
-        </section>
-
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Wand2 className="size-4 text-muted-foreground" />
-              <h2 className="text-base font-semibold">Creator Examples</h2>
+        <div className="px-6 lg:px-8 space-y-10">
+          <section>
+            <SectionHeader icon={Bookmark} title="Popular Tools" />
+            <div className="flex flex-wrap gap-x-10 gap-y-4">
+              {popularTools.map((t) => <ToolPill key={t.label} {...t} />)}
             </div>
-            <div className="flex items-center gap-2">
-              <div className="flex p-0.5 rounded-lg bg-surface border border-border text-[13px]">
-                {["All", "Videos", "Images"].map((t, i) => (
-                  <button key={t} className={`px-3 h-7 rounded-md transition-colors ${i === 0 ? "bg-surface-hover text-foreground" : "text-muted-foreground hover:text-foreground"}`}>{t}</button>
-                ))}
+          </section>
+
+          <section>
+            <SectionHeader icon={Film} title="Video Tools" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
+              {videoTools.map((t) => <MediaCard key={t.title} {...t} />)}
+            </div>
+          </section>
+
+          <section>
+            <SectionHeader icon={Brush} title="Image Tools" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
+              {imageTools.map((t) => <MediaCard key={t.title} {...t} />)}
+            </div>
+          </section>
+
+          <section>
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2">
+                <Wand2 className="size-4 text-muted-foreground" />
+                <h2 className="text-[15px] font-semibold">Creator Examples</h2>
               </div>
-              <button className="h-8 px-3 rounded-md bg-surface border border-border text-[13px] text-muted-foreground hover:text-foreground">All Filters</button>
+              <div className="flex items-center gap-2">
+                <div className="flex p-0.5 rounded-lg bg-surface text-[13px]">
+                  {["All", "Videos", "Images"].map((t, i) => (
+                    <button key={t} className={`px-3 h-7 rounded-md transition-colors ${i === 0 ? "bg-surface-hover text-foreground" : "text-muted-foreground hover:text-foreground"}`}>{t}</button>
+                  ))}
+                </div>
+                <button className="h-8 px-3 rounded-md bg-surface text-[13px] text-muted-foreground hover:text-foreground">All Filters</button>
+              </div>
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {creatorExamples.map((img, i) => (
-              <div key={i} className="group cursor-pointer">
-                <div className="relative aspect-[3/4] rounded-xl overflow-hidden border border-border/60 bg-surface">
-                  <img src={img} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-90" />
-                  <div className="absolute top-2 left-2">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-black/60 backdrop-blur text-white/90">
-                      {i % 3 === 0 ? "Seedance 2.0" : i % 3 === 1 ? "Kling 3.0" : "Agent"}
-                    </span>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {creatorExamples.map((img, i) => (
+                <div key={i} className="group cursor-pointer">
+                  <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-surface">
+                    <img src={img} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-90" />
+                    <div className="absolute top-2 left-2">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-black/60 backdrop-blur text-white/90">
+                        {i % 3 === 0 ? "Seedance" : i % 3 === 1 ? "Kling" : "Agent"}
+                      </span>
+                    </div>
+                    <div className="absolute bottom-2 left-2 text-[11px] font-medium text-white/85">
+                      {i % 4 === 0 ? "1:00" : `0:${8 + (i % 3) * 5}`}
+                    </div>
                   </div>
-                  <div className="absolute bottom-2 left-2 text-[11px] font-medium text-white/85">
-                    {i % 4 === 0 ? "1.00min" : `${8 + (i % 3) * 5}s`}
+                  <div className="mt-2 flex gap-1.5">
+                    <button className="flex-1 h-7 rounded-md bg-surface hover:bg-surface-hover text-[11px] font-medium">Recreate</button>
+                    <button className="flex-1 h-7 rounded-md bg-surface hover:bg-surface-hover text-[11px] font-medium text-muted-foreground">Reuse Inputs</button>
                   </div>
                 </div>
-                <div className="mt-2 flex gap-1.5">
-                  <button className="flex-1 h-7 rounded-md bg-surface hover:bg-surface-hover border border-border text-[11px] font-medium">Recreate</button>
-                  <button className="flex-1 h-7 rounded-md bg-surface hover:bg-surface-hover border border-border text-[11px] font-medium text-muted-foreground">Reuse Inputs</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
+              ))}
+            </div>
+          </section>
+        </div>
       </div>
     </AppShell>
   );
