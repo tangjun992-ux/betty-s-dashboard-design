@@ -1,7 +1,10 @@
-import { Link, useRouterState } from "@tanstack/react-router";
-import { Search, Bell, Coins, ChevronRight, Sparkles } from "lucide-react";
+import { Link, useRouter, useRouterState } from "@tanstack/react-router";
+import { Search, Bell, Coins, ChevronRight, Sparkles, LogOut } from "lucide-react";
 import { useMemo } from "react";
+import { toast } from "sonner";
 import { useSidebarState } from "@/components/sidebar-state";
+import { useSession, useProfile } from "@/lib/use-session";
+import { supabase } from "@/integrations/supabase/client";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,11 +13,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const ROUTE_LABELS: Record<string, string> = {
   "/": "Home",
   "/explore": "Explore",
+  "/feed": "Feed",
   "/library": "My Library",
   "/sessions": "Sessions",
   "/tools": "All Tools",
@@ -50,6 +54,19 @@ function useBreadcrumbs() {
 export function TopBar() {
   const { setPaletteOpen } = useSidebarState();
   const crumbs = useBreadcrumbs();
+  const { user } = useSession();
+  const profile = useProfile(user?.id);
+  const router = useRouter();
+
+  const credits = profile?.credits ?? 0;
+  const displayName = profile?.display_name || user?.email?.split("@")[0] || "Guest";
+  const initial = (displayName[0] ?? "B").toUpperCase();
+
+  async function signOut() {
+    await supabase.auth.signOut();
+    toast.success("Signed out");
+    router.invalidate();
+  }
 
   return (
     <header className="sticky top-0 z-30 h-14 px-6 lg:px-10 flex items-center gap-4 border-b border-border/60 bg-background/80 backdrop-blur">
@@ -87,7 +104,7 @@ export function TopBar() {
           className="h-9 px-3 rounded-md bg-surface border border-border text-[13px] flex items-center gap-1.5 hover:bg-surface-hover transition-colors"
         >
           <Coins className="size-4 text-amber-400" />
-          <span className="font-medium tabular-nums">120</span>
+          <span className="font-medium tabular-nums">{credits}</span>
           <span className="text-muted-foreground hidden sm:inline">credits</span>
         </Link>
 
@@ -99,22 +116,23 @@ export function TopBar() {
               aria-label="Notifications"
             >
               <Bell className="size-4" />
-              <span className="absolute top-1.5 right-1.5 size-1.5 rounded-full bg-brand" />
+              {user && <span className="absolute top-1.5 right-1.5 size-1.5 rounded-full bg-brand" />}
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-80">
             <DropdownMenuLabel className="flex items-center justify-between">
               <span>Notifications</span>
-              <span className="text-[10.5px] uppercase tracking-wider text-muted-foreground">3 new</span>
+              <span className="text-[10.5px] uppercase tracking-wider text-muted-foreground">{user ? "Live" : "—"}</span>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <NotifItem title="Your video is ready" desc="Seedance 2.0 — 8 seconds" time="2m" />
-            <NotifItem title="Daily sign-in reward" desc="+10 credits added to your balance" time="1h" />
-            <NotifItem title="Welcome to Betty" desc="Try the Agent for a guided first run" time="1d" />
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="justify-center text-[12px] text-muted-foreground">
-              View all
-            </DropdownMenuItem>
+            {user ? (
+              <>
+                <NotifItem title="Welcome to Betty" desc="Your account is ready. You have 100 free credits to start." time="now" />
+                <NotifItem title="Try the Image tool" desc="Generate your first image with Nano Banana" time="now" />
+              </>
+            ) : (
+              <NotifItem title="Sign in to get notified" desc="Track your generations, credits and likes" time="" />
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -122,16 +140,19 @@ export function TopBar() {
           <DropdownMenuTrigger asChild>
             <button type="button" className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50" aria-label="Account menu">
               <Avatar className="size-9 border border-border">
+                {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} alt="" /> : null}
                 <AvatarFallback className="bg-[image:var(--gradient-brand)] text-brand-foreground text-[12px] font-semibold">
-                  B
+                  {initial}
                 </AvatarFallback>
               </Avatar>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel className="flex flex-col">
-              <span className="text-[13px] font-medium">Guest</span>
-              <span className="text-[11px] text-muted-foreground">Not signed in</span>
+              <span className="text-[13px] font-medium truncate">{displayName}</span>
+              <span className="text-[11px] text-muted-foreground truncate">
+                {user?.email ?? "Not signed in"}
+              </span>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
@@ -144,9 +165,15 @@ export function TopBar() {
               <Link to="/settings">Settings</Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link to="/auth" className="font-medium">Sign in</Link>
-            </DropdownMenuItem>
+            {user ? (
+              <DropdownMenuItem onClick={signOut} className="text-destructive">
+                <LogOut className="size-3.5" /> Sign out
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem asChild>
+                <Link to="/auth" className="font-medium">Sign in</Link>
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -159,7 +186,7 @@ function NotifItem({ title, desc, time }: { title: string; desc: string; time: s
     <DropdownMenuItem className="flex-col items-start gap-0.5 py-2.5">
       <div className="flex items-center justify-between w-full">
         <span className="text-[12.5px] font-medium">{title}</span>
-        <span className="text-[10.5px] text-muted-foreground">{time}</span>
+        {time && <span className="text-[10.5px] text-muted-foreground">{time}</span>}
       </div>
       <span className="text-[11.5px] text-muted-foreground leading-snug">{desc}</span>
     </DropdownMenuItem>
