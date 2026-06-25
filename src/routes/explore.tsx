@@ -362,6 +362,10 @@ function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
   // Race protection: only the latest request id may write state.
   const reqIdRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
+  // Toast coalescing: a single trailing flush summarizes rapid filter/sort clicks.
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelCountRef = useRef(0);
+  const lastCancelAtRef = useRef(0);
 
   // Save scroll position continuously for the *current* key.
   useEffect(() => {
