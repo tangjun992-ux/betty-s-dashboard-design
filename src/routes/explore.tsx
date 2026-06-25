@@ -201,31 +201,42 @@ function ModelRow({ section }: { section: (typeof featuredModels)[number] }) {
   const [cards, setCards] = useState<Card[]>([]);
   const [cursor, setCursor] = useState<number | null>(0);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const attemptRef = useRef(1);
 
   const loadMore = useCallback(async () => {
     if (loading || cursor === null) return;
     setLoading(true);
-    const page = await fetchPage({ cursor, limit: 8, kind: section.kind, model: section.model, seed: section.seed });
-    setCards((prev) => [...prev, ...page.items]);
-    setCursor(page.nextCursor);
-    setLoading(false);
+    setError(null);
+    try {
+      const page = await fetchPage({
+        cursor, limit: 8, kind: section.kind, model: section.model, seed: section.seed,
+        attempt: attemptRef.current,
+      });
+      attemptRef.current = 1;
+      setCards((prev) => [...prev, ...page.items]);
+      setCursor(page.nextCursor);
+    } catch (e) {
+      attemptRef.current += 1;
+      setError(e instanceof Error ? e.message : "Failed to load");
+    } finally {
+      setLoading(false);
+    }
   }, [loading, cursor, section.kind, section.model, section.seed]);
 
-  // initial load
   useEffect(() => { if (cards.length === 0) loadMore(); /* eslint-disable-next-line */ }, []);
 
-  // horizontal sentinel for "load more on scroll end"
   useEffect(() => {
     const el = sentinelRef.current;
     const root = scrollerRef.current;
-    if (!el || !root) return;
+    if (!el || !root || error) return;
     const io = new IntersectionObserver(
       (entries) => entries.forEach((e) => e.isIntersecting && loadMore()),
       { root, rootMargin: "0px 600px 0px 0px", threshold: 0 },
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [loadMore]);
+  }, [loadMore, error]);
 
   const scroll = (dir: 1 | -1) => {
     const el = scrollerRef.current;
@@ -266,17 +277,33 @@ function ModelRow({ section }: { section: (typeof featuredModels)[number] }) {
         className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory -mx-6 lg:-mx-8 px-6 lg:px-8 pb-2"
       >
         {cards.map((c) => <ExploreCard key={c.id} card={c} />)}
-        {cursor !== null && (
+
+        {loading && Array.from({ length: 6 }).map((_, i) => (
+          <SkeletonCard key={`sk-${i}`} ratio={ratios[(i + section.seed) % ratios.length]} />
+        ))}
+
+        {error && (
+          <div className="shrink-0 w-64 grid place-items-center rounded-xl bg-surface border border-border/40 p-4 text-center">
+            <AlertCircle className="size-5 text-rose-400 mb-2" />
+            <p className="text-[12px] text-muted-foreground mb-2">{error}</p>
+            <button
+              onClick={loadMore}
+              className="inline-flex items-center gap-1.5 h-7 px-3 rounded-md bg-surface-hover text-[11px] font-medium hover:bg-white/10"
+            >
+              <RefreshCw className="size-3" /> Retry
+            </button>
+          </div>
+        )}
+
+        {!loading && !error && cursor !== null && (
           <div ref={sentinelRef} className="shrink-0 w-40 grid place-items-center text-muted-foreground">
-            {loading ? <Loader2 className="size-4 animate-spin" /> : <span className="text-xs">Load more →</span>}
+            <span className="text-xs">Load more →</span>
           </div>
         )}
       </div>
     </section>
   );
 }
-
-/* ───────────────────────── Infinite waterfall (masonry) ──────────────────── */
 
 function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
   const [items, setItems] = useState<Card[]>([]);
