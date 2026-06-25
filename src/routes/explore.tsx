@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { Sparkles, ArrowRight, Heart, RotateCcw, Repeat2, ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
-import { useMemo, useState } from "react";
+import {
+  Sparkles, ArrowRight, Heart, RotateCcw, Repeat2,
+  ChevronLeft, ChevronRight, SlidersHorizontal, Loader2,
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import toolSeedance from "@/assets/tool-seedance.jpg";
 import toolMotion from "@/assets/tool-motion.jpg";
@@ -19,10 +22,12 @@ export const Route = createFileRoute("/explore")({
   component: ExplorePage,
 });
 
+type Kind = "image" | "video";
 type Card = {
+  id: string;
   src: string;
   ratio: string;
-  kind: "image" | "video";
+  kind: Kind;
   model: string;
   duration?: string;
   likes: number;
@@ -32,39 +37,61 @@ const pool: string[] = [
   toolSeedance, toolMotion, toolAvatar, toolVideogen, toolProduct, toolHeadshot,
   toolImagegen, bannerInfluencers, bannerTutorial, bannerEarn,
 ];
-const ratios = ["3/4", "2/3", "4/5", "1/1", "9/16"];
+const ratios = ["3/4", "2/3", "4/5", "1/1", "9/16", "3/4", "4/5"];
+const allModels = ["GPT Image 2", "Seedance 2.0", "Kling 3.0", "Veo 3.1", "Flux 1.1", "Nano Banana"];
 
-function makeCards(model: string, kind: "image" | "video", n: number, seed = 0): Card[] {
-  return Array.from({ length: n }, (_, i) => ({
-    src: pool[(i + seed) % pool.length],
-    ratio: ratios[(i + seed) % ratios.length],
-    kind,
-    model,
-    duration: kind === "video" ? `0:${String(5 + ((i * 7) % 50)).padStart(2, "0")}` : undefined,
-    likes: 120 + ((i * 37 + seed * 11) % 4000),
-  }));
+// Cursor-based fake fetcher — mimics Yapper's `?cursor=…&limit=…` API shape.
+function fetchPage(opts: {
+  cursor: number;
+  limit: number;
+  kind?: Kind | "all";
+  model?: string;
+  seed?: number;
+}): Promise<{ items: Card[]; nextCursor: number | null }> {
+  const { cursor, limit, kind = "all", model, seed = 0 } = opts;
+  const items: Card[] = Array.from({ length: limit }, (_, i) => {
+    const idx = cursor + i + seed;
+    const k: Kind = kind === "all" ? (idx % 3 === 0 ? "video" : "image") : kind;
+    const m = model ?? allModels[idx % allModels.length];
+    return {
+      id: `${m}-${idx}`,
+      src: pool[idx % pool.length],
+      ratio: ratios[idx % ratios.length],
+      kind: k,
+      model: m,
+      duration: k === "video" ? `0:${String(5 + ((idx * 7) % 50)).padStart(2, "0")}` : undefined,
+      likes: 120 + ((idx * 37 + seed * 11) % 4000),
+    };
+  });
+  const next = cursor + limit;
+  // Cap so we eventually stop (mimic exhausted feed after ~120 items).
+  const nextCursor = next >= 120 ? null : next;
+  return new Promise((res) => setTimeout(() => res({ items, nextCursor }), 280));
 }
-
-const sections = [
-  { id: "gpt-image-2", model: "GPT Image 2", tagline: "4K images with near-perfect text rendering", badge: "New Model", kind: "image" as const, cards: makeCards("GPT Image 2", "image", 12, 0) },
-  { id: "seedance", model: "Seedance 2.0", tagline: "Multi-shot, multi-modal cinematic video", badge: "Popular", kind: "video" as const, cards: makeCards("Seedance 2.0", "video", 12, 3) },
-  { id: "kling", model: "Kling 3.0", tagline: "Photoreal motion with strong character consistency", kind: "video" as const, cards: makeCards("Kling 3.0", "video", 12, 5) },
-  { id: "veo", model: "Veo 3.1", tagline: "Cinematic 1080p clips with native audio", badge: "Audio", kind: "video" as const, cards: makeCards("Veo 3.1", "video", 12, 7) },
-];
 
 const filters = ["All", "Videos", "Images", "Avatars", "Audio"] as const;
 const sorts = ["Trending", "Newest", "Most Liked"] as const;
+
+const featuredModels = [
+  { id: "gpt-image-2", model: "GPT Image 2", tagline: "4K images with near-perfect text rendering", badge: "New Model", kind: "image" as const, seed: 0 },
+  { id: "seedance", model: "Seedance 2.0", tagline: "Multi-shot, multi-modal cinematic video", badge: "Popular", kind: "video" as const, seed: 3 },
+  { id: "kling", model: "Kling 3.0", tagline: "Photoreal motion with strong character consistency", kind: "video" as const, seed: 5 },
+  { id: "veo", model: "Veo 3.1", tagline: "Cinematic 1080p clips with native audio", badge: "Audio", kind: "video" as const, seed: 7 },
+];
 
 function ExplorePage() {
   const [filter, setFilter] = useState<(typeof filters)[number]>("All");
   const [sort, setSort] = useState<(typeof sorts)[number]>("Trending");
 
-  const visible = useMemo(() => {
-    if (filter === "All") return sections;
-    if (filter === "Videos") return sections.filter((s) => s.kind === "video");
-    if (filter === "Images") return sections.filter((s) => s.kind === "image");
-    return sections;
+  const visibleRows = useMemo(() => {
+    if (filter === "Videos") return featuredModels.filter((s) => s.kind === "video");
+    if (filter === "Images") return featuredModels.filter((s) => s.kind === "image");
+    if (filter === "Avatars" || filter === "Audio") return [];
+    return featuredModels;
   }, [filter]);
+
+  const feedKind: Kind | "all" =
+    filter === "Videos" ? "video" : filter === "Images" ? "image" : "all";
 
   return (
     <AppShell>
@@ -128,20 +155,55 @@ function ExplorePage() {
         </div>
 
         {/* Per-model horizontal rows */}
-        {visible.map((section) => (
+        {visibleRows.map((section) => (
           <ModelRow key={section.id} section={section} />
         ))}
+
+        {/* Infinite waterfall feed */}
+        <WaterfallFeed kind={feedKind} sort={sort} />
       </div>
     </AppShell>
   );
 }
 
-function ModelRow({ section }: { section: (typeof sections)[number] }) {
-  const [scrollerRef, setScrollerRef] = useState<HTMLDivElement | null>(null);
+/* ───────────────────────── Model row with cursor pagination ──────────────── */
+
+function ModelRow({ section }: { section: (typeof featuredModels)[number] }) {
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const [cards, setCards] = useState<Card[]>([]);
+  const [cursor, setCursor] = useState<number | null>(0);
+  const [loading, setLoading] = useState(false);
+
+  const loadMore = useCallback(async () => {
+    if (loading || cursor === null) return;
+    setLoading(true);
+    const page = await fetchPage({ cursor, limit: 8, kind: section.kind, model: section.model, seed: section.seed });
+    setCards((prev) => [...prev, ...page.items]);
+    setCursor(page.nextCursor);
+    setLoading(false);
+  }, [loading, cursor, section.kind, section.model, section.seed]);
+
+  // initial load
+  useEffect(() => { if (cards.length === 0) loadMore(); /* eslint-disable-next-line */ }, []);
+
+  // horizontal sentinel for "load more on scroll end"
+  useEffect(() => {
+    const el = sentinelRef.current;
+    const root = scrollerRef.current;
+    if (!el || !root) return;
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((e) => e.isIntersecting && loadMore()),
+      { root, rootMargin: "0px 600px 0px 0px", threshold: 0 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [loadMore]);
 
   const scroll = (dir: 1 | -1) => {
-    if (!scrollerRef) return;
-    scrollerRef.scrollBy({ left: dir * scrollerRef.clientWidth * 0.85, behavior: "smooth" });
+    const el = scrollerRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * el.clientWidth * 0.85, behavior: "smooth" });
   };
 
   return (
@@ -173,25 +235,94 @@ function ModelRow({ section }: { section: (typeof sections)[number] }) {
         </div>
       </div>
       <div
-        ref={setScrollerRef}
+        ref={scrollerRef}
         className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory -mx-6 lg:-mx-8 px-6 lg:px-8 pb-2"
       >
-        {section.cards.map((c, i) => (
-          <ExploreCard key={i} card={c} />
-        ))}
+        {cards.map((c) => <ExploreCard key={c.id} card={c} />)}
+        {cursor !== null && (
+          <div ref={sentinelRef} className="shrink-0 w-40 grid place-items-center text-muted-foreground">
+            {loading ? <Loader2 className="size-4 animate-spin" /> : <span className="text-xs">Load more →</span>}
+          </div>
+        )}
       </div>
     </section>
   );
 }
 
-function ExploreCard({ card }: { card: Card }) {
+/* ───────────────────────── Infinite waterfall (masonry) ──────────────────── */
+
+function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
+  const [items, setItems] = useState<Card[]>([]);
+  const [cursor, setCursor] = useState<number | null>(0);
+  const [loading, setLoading] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  // Reset when filters change (Yapper resets the cursor when sort/kind changes).
+  useEffect(() => {
+    setItems([]);
+    setCursor(0);
+  }, [kind, sort]);
+
+  const loadMore = useCallback(async () => {
+    if (loading || cursor === null) return;
+    setLoading(true);
+    const page = await fetchPage({ cursor, limit: 18, kind, seed: 13 });
+    setItems((prev) => [...prev, ...page.items]);
+    setCursor(page.nextCursor);
+    setLoading(false);
+  }, [loading, cursor, kind]);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((e) => e.isIntersecting && loadMore()),
+      { rootMargin: "1200px 0px 1200px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [loadMore]);
+
+  return (
+    <section>
+      <div className="flex items-end justify-between mb-4">
+        <div>
+          <h2 className="text-[22px] font-bold tracking-tight uppercase">For You</h2>
+          <p className="mt-1 text-[13px] text-muted-foreground">A blended feed across every model and creator.</p>
+        </div>
+      </div>
+
+      <div className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-3 [column-fill:_balance]">
+        {items.map((c) => (
+          <div key={c.id} className="mb-3 break-inside-avoid">
+            <ExploreCard card={c} full />
+          </div>
+        ))}
+      </div>
+
+      <div ref={sentinelRef} className="mt-6 h-16 grid place-items-center text-muted-foreground">
+        {cursor === null ? (
+          <span className="text-xs">You've reached the end.</span>
+        ) : loading ? (
+          <span className="inline-flex items-center gap-2 text-xs"><Loader2 className="size-4 animate-spin" /> Loading…</span>
+        ) : (
+          <button onClick={loadMore} className="text-xs hover:text-foreground">Load more</button>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/* ───────────────────────── Card ──────────────────────────────────────────── */
+
+function ExploreCard({ card, full = false }: { card: Card; full?: boolean }) {
   const [liked, setLiked] = useState(false);
   return (
-    <div className="snap-start shrink-0 group cursor-pointer" style={{ width: "min(260px, 60vw)" }}>
-      <div
-        className="relative rounded-xl overflow-hidden bg-surface"
-        style={{ aspectRatio: card.ratio }}
-      >
+    <div
+      className={`group cursor-pointer ${full ? "" : "snap-start shrink-0"}`}
+      style={full ? undefined : { width: "min(260px, 60vw)" }}
+    >
+      <div className="relative rounded-xl overflow-hidden bg-surface" style={{ aspectRatio: card.ratio }}>
         <img src={card.src} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/0 to-black/0 opacity-90" />
 
