@@ -449,6 +449,10 @@ function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
 
     setLoading(true);
     setError(null);
+    const isFirstPage = myCursor === 0;
+    if (!isFirstPage) {
+      toast.loading("Loading more…", { id: "feed-loading" });
+    }
     try {
       const page = await fetchPage({
         cursor: myCursor, limit: 18, kind, seed: 13,
@@ -459,15 +463,24 @@ function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
       attemptRef.current = 1;
       setItems((prev) => [...prev, ...page.items]);
       setCursor(page.nextCursor);
+      toast.dismiss("feed-loading");
+      if (page.nextCursor === null) {
+        toast.success("You've reached the end", { id: "feed-end", duration: 1600 });
+      }
     } catch (e) {
-      if ((e as DOMException)?.name === "AbortError") return;
+      if ((e as DOMException)?.name === "AbortError") {
+        toast.dismiss("feed-loading");
+        return;
+      }
       if (myId !== reqIdRef.current || myKey !== keyRef.current) return;
       attemptRef.current += 1;
-      setError(e instanceof Error ? e.message : "Failed to load");
+      const msg = e instanceof Error ? e.message : "Failed to load";
+      setError(msg);
+      toast.error(msg, { id: "feed-loading", description: "Tap Retry to try again.", duration: 3500 });
     } finally {
       if (myId === reqIdRef.current) setLoading(false);
     }
-  }, [loading, cursor, kind]);
+  }, [loading, cursor, kind, sort]);
 
   // Sentinel observer — pause until any pending scroll restore has settled,
   // otherwise restoring to a far-down scrollY would auto-fire loadMore.
