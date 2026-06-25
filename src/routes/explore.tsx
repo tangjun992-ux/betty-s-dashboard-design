@@ -1,12 +1,14 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import {
   Sparkles, ArrowRight, Heart, RotateCcw, Repeat2,
   ChevronLeft, ChevronRight, SlidersHorizontal, Loader2,
-  AlertCircle, ImageOff, RefreshCw,
+  AlertCircle, ImageOff, RefreshCw, X, Download, Share2,
+  ImagePlus, Mic2,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, KeyboardEvent as ReactKeyboardEvent } from "react";
 import { toast } from "sonner";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 
 import toolSeedance from "@/assets/tool-seedance.jpg";
 import toolMotion from "@/assets/tool-motion.jpg";
@@ -19,8 +21,16 @@ import bannerInfluencers from "@/assets/banner-influencers.jpg";
 import bannerTutorial from "@/assets/banner-tutorial.jpg";
 import bannerEarn from "@/assets/banner-earn.jpg";
 
+type SearchParams = { filter?: string; sort?: string };
+const validFilters = ["All", "Videos", "Images", "Avatars", "Audio"] as const;
+const validSorts = ["Trending", "Newest", "Most Liked"] as const;
+
 export const Route = createFileRoute("/explore")({
   head: () => ({ meta: [{ title: "Explore — Betty" }] }),
+  validateSearch: (search: Record<string, unknown>): SearchParams => ({
+    filter: validFilters.includes(search.filter as never) ? (search.filter as string) : undefined,
+    sort: validSorts.includes(search.sort as never) ? (search.sort as string) : undefined,
+  }),
   component: ExplorePage,
 });
 
