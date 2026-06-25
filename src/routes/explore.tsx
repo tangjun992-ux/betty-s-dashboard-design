@@ -140,9 +140,37 @@ const featuredModels = [
   { id: "veo", model: "Veo 3.1", tagline: "Cinematic 1080p clips with native audio", badge: "Audio", kind: "video" as const, seed: 7 },
 ];
 
+type Filter = (typeof validFilters)[number];
+type Sort = (typeof validSorts)[number];
+
 function ExplorePage() {
-  const [filter, setFilter] = useState<(typeof filters)[number]>("All");
-  const [sort, setSort] = useState<(typeof sorts)[number]>("Trending");
+  const search = Route.useSearch();
+  const navigate = useNavigate({ from: "/explore" });
+
+  const filter = (search.filter as Filter) ?? "All";
+  const sort = (search.sort as Sort) ?? "Trending";
+
+  const setFilter = (f: Filter) =>
+    navigate({ search: (s) => ({ ...s, filter: f === "All" ? undefined : f }), replace: true });
+  const setSort = (s: Sort) =>
+    navigate({ search: (prev) => ({ ...prev, sort: s === "Trending" ? undefined : s }), replace: true });
+
+  const [active, setActive] = useState<Card | null>(null);
+
+  const filterBarRef = useRef<HTMLDivElement | null>(null);
+  const onFilterKey = (e: ReactKeyboardEvent<HTMLButtonElement>, idx: number) => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight" && e.key !== "Home" && e.key !== "End") return;
+    e.preventDefault();
+    const buttons = filterBarRef.current?.querySelectorAll<HTMLButtonElement>("button[data-filter]");
+    if (!buttons?.length) return;
+    let next = idx;
+    if (e.key === "ArrowLeft") next = (idx - 1 + buttons.length) % buttons.length;
+    else if (e.key === "ArrowRight") next = (idx + 1) % buttons.length;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = buttons.length - 1;
+    buttons[next].focus();
+    buttons[next].click();
+  };
 
   const visibleRows = useMemo(() => {
     if (filter === "Videos") return featuredModels.filter((s) => s.kind === "video");
@@ -154,9 +182,10 @@ function ExplorePage() {
   const feedKind: Kind | "all" =
     filter === "Videos" ? "video" : filter === "Images" ? "image" : "all";
 
-  // Debounce filter/sort so rapid clicks don't kick off a stampede of fetches.
   const debouncedKind = useDebounced(feedKind, 180);
   const debouncedSort = useDebounced(sort, 180);
+
+  const emptyKind = filter === "Avatars" || filter === "Audio";
 
   return (
     <AppShell>
@@ -192,12 +221,17 @@ function ExplorePage() {
 
         {/* Filter bar */}
         <div className="sticky top-0 z-20 -mx-6 lg:-mx-8 px-6 lg:px-8 py-3 bg-background/85 backdrop-blur border-b border-border/40 flex flex-wrap items-center gap-3">
-          <div className="flex p-0.5 rounded-lg bg-surface text-[13px]">
-            {filters.map((t) => (
+          <div ref={filterBarRef} role="tablist" aria-label="Content type" className="flex p-0.5 rounded-lg bg-surface text-[13px]">
+            {validFilters.map((t, i) => (
               <button
                 key={t}
+                data-filter
+                role="tab"
+                aria-selected={filter === t}
+                tabIndex={filter === t ? 0 : -1}
                 onClick={() => setFilter(t)}
-                className={`px-3 h-8 rounded-md transition-colors ${
+                onKeyDown={(e) => onFilterKey(e, i)}
+                className={`px-3 h-8 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 ${
                   filter === t ? "bg-surface-hover text-foreground" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
@@ -208,10 +242,11 @@ function ExplorePage() {
           <div className="flex items-center gap-2 ml-auto">
             <select
               value={sort}
-              onChange={(e) => setSort(e.target.value as (typeof sorts)[number])}
-              className="h-8 px-3 rounded-md bg-surface text-[13px] focus:outline-none"
+              onChange={(e) => setSort(e.target.value as Sort)}
+              aria-label="Sort"
+              className="h-8 px-3 rounded-md bg-surface text-[13px] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60"
             >
-              {sorts.map((s) => <option key={s}>{s}</option>)}
+              {validSorts.map((s) => <option key={s}>{s}</option>)}
             </select>
             <button className="h-8 px-3 rounded-md bg-surface text-[13px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5">
               <SlidersHorizontal className="size-3.5" /> All Filters
@@ -226,7 +261,7 @@ function ExplorePage() {
 
         {/* Per-model horizontal rows */}
         {visibleRows.map((section) => (
-          <ModelRow key={section.id} section={section} />
+          <ModelRow key={section.id} section={section} onOpen={setActive} />
         ))}
 
         {/* Infinite waterfall feed */}
