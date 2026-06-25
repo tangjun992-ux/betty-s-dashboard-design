@@ -309,33 +309,45 @@ function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
   const [items, setItems] = useState<Card[]>([]);
   const [cursor, setCursor] = useState<number | null>(0);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const attemptRef = useRef(1);
 
   // Reset when filters change (Yapper resets the cursor when sort/kind changes).
   useEffect(() => {
     setItems([]);
     setCursor(0);
+    setError(null);
+    attemptRef.current = 1;
   }, [kind, sort]);
 
   const loadMore = useCallback(async () => {
     if (loading || cursor === null) return;
     setLoading(true);
-    const page = await fetchPage({ cursor, limit: 18, kind, seed: 13 });
-    setItems((prev) => [...prev, ...page.items]);
-    setCursor(page.nextCursor);
-    setLoading(false);
+    setError(null);
+    try {
+      const page = await fetchPage({ cursor, limit: 18, kind, seed: 13, attempt: attemptRef.current });
+      attemptRef.current = 1;
+      setItems((prev) => [...prev, ...page.items]);
+      setCursor(page.nextCursor);
+    } catch (e) {
+      attemptRef.current += 1;
+      setError(e instanceof Error ? e.message : "Failed to load");
+    } finally {
+      setLoading(false);
+    }
   }, [loading, cursor, kind]);
 
   useEffect(() => {
     const el = sentinelRef.current;
-    if (!el) return;
+    if (!el || error) return;
     const io = new IntersectionObserver(
       (entries) => entries.forEach((e) => e.isIntersecting && loadMore()),
       { rootMargin: "1200px 0px 1200px 0px" },
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [loadMore]);
+  }, [loadMore, error]);
 
   return (
     <section>
@@ -352,10 +364,26 @@ function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
             <ExploreCard card={c} full />
           </div>
         ))}
+        {loading && Array.from({ length: 10 }).map((_, i) => (
+          <div key={`wsk-${i}`} className="mb-3 break-inside-avoid">
+            <SkeletonCard ratio={ratios[(i * 3) % ratios.length]} full />
+          </div>
+        ))}
       </div>
 
-      <div ref={sentinelRef} className="mt-6 h-16 grid place-items-center text-muted-foreground">
-        {cursor === null ? (
+      <div ref={sentinelRef} className="mt-6 min-h-16 grid place-items-center text-muted-foreground">
+        {error ? (
+          <div className="flex flex-col items-center gap-2 py-4">
+            <AlertCircle className="size-5 text-rose-400" />
+            <p className="text-[12px]">{error}</p>
+            <button
+              onClick={loadMore}
+              className="inline-flex items-center gap-1.5 h-8 px-4 rounded-md bg-surface hover:bg-surface-hover text-[12px] font-medium"
+            >
+              <RefreshCw className="size-3.5" /> Retry
+            </button>
+          </div>
+        ) : cursor === null ? (
           <span className="text-xs">You've reached the end.</span>
         ) : loading ? (
           <span className="inline-flex items-center gap-2 text-xs"><Loader2 className="size-4 animate-spin" /> Loading…</span>
