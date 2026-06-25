@@ -137,3 +137,49 @@ export const getMyCreditHistory = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return data ?? [];
   });
+
+export const getProfileByHandle = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ handle: z.string().min(1).max(40) }).parse(d))
+  .handler(async ({ data }) => {
+    const sb = publicClient();
+    const { data: profile, error } = await sb
+      .from("profiles")
+      .select("id,handle,display_name,avatar_url,bio,created_at")
+      .eq("handle", data.handle)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!profile) return null;
+
+    const [followers, following, gens] = await Promise.all([
+      sb.from("follows").select("follower_id", { count: "exact", head: true }).eq("followee_id", profile.id),
+      sb.from("follows").select("followee_id", { count: "exact", head: true }).eq("follower_id", profile.id),
+      sb
+        .from("generations")
+        .select("id,kind,model,prompt,asset_url,thumb_url,like_count,created_at,width,height")
+        .eq("user_id", profile.id)
+        .eq("status", "succeeded")
+        .eq("is_public", true)
+        .order("created_at", { ascending: false })
+        .limit(60),
+    ]);
+    return {
+      profile,
+      followerCount: followers.count ?? 0,
+      followingCount: following.count ?? 0,
+      generations: gens.data ?? [],
+    };
+  });
+
+export const getFollowState = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ userId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    if (data.userId === context.userId) return { following: false, isSelf: true };
+    const { data: row } = await context.supabase
+      .from("follows")
+      .select("follower_id")
+      .eq("follower_id", context.userId)
+      .eq("followee_id", data.userId)
+      .maybeSingle();
+    return { following: !!row, isSelf: false };
+  });

@@ -20,6 +20,7 @@ import { Route as EarnRouteImport } from './routes/earn'
 import { Route as CreateRouteImport } from './routes/create'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as UHandleRouteImport } from './routes/u.$handle'
 import { Route as CreateVideoRouteImport } from './routes/create.video'
 import { Route as CreateUpscaleRouteImport } from './routes/create.upscale'
 import { Route as CreateMotionRouteImport } from './routes/create.motion'
@@ -83,6 +84,11 @@ const AuthRoute = AuthRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UHandleRoute = UHandleRouteImport.update({
+  id: '/u/$handle',
+  path: '/u/$handle',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CreateVideoRoute = CreateVideoRouteImport.update({
@@ -152,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/create/motion': typeof CreateMotionRoute
   '/create/upscale': typeof CreateUpscaleRoute
   '/create/video': typeof CreateVideoRoute
+  '/u/$handle': typeof UHandleRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -174,6 +181,7 @@ export interface FileRoutesByTo {
   '/create/motion': typeof CreateMotionRoute
   '/create/upscale': typeof CreateUpscaleRoute
   '/create/video': typeof CreateVideoRoute
+  '/u/$handle': typeof UHandleRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -197,6 +205,7 @@ export interface FileRoutesById {
   '/create/motion': typeof CreateMotionRoute
   '/create/upscale': typeof CreateUpscaleRoute
   '/create/video': typeof CreateVideoRoute
+  '/u/$handle': typeof UHandleRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -221,6 +230,7 @@ export interface FileRouteTypes {
     | '/create/motion'
     | '/create/upscale'
     | '/create/video'
+    | '/u/$handle'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -243,6 +253,7 @@ export interface FileRouteTypes {
     | '/create/motion'
     | '/create/upscale'
     | '/create/video'
+    | '/u/$handle'
   id:
     | '__root__'
     | '/'
@@ -265,6 +276,7 @@ export interface FileRouteTypes {
     | '/create/motion'
     | '/create/upscale'
     | '/create/video'
+    | '/u/$handle'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -279,6 +291,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ToolsRoute: typeof ToolsRoute
+  UHandleRoute: typeof UHandleRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -358,6 +371,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/u/$handle': {
+      id: '/u/$handle'
+      path: '/u/$handle'
+      fullPath: '/u/$handle'
+      preLoaderRoute: typeof UHandleRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/create/video': {
@@ -465,6 +485,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ToolsRoute: ToolsRoute,
+  UHandleRoute: UHandleRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
