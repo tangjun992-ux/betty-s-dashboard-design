@@ -264,10 +264,90 @@ function ExplorePage() {
           <ModelRow key={section.id} section={section} onOpen={setActive} />
         ))}
 
+        {emptyKind && (
+          <section className="rounded-2xl bg-surface/60 border border-border/40 p-10 text-center">
+            <div className="mx-auto size-12 grid place-items-center rounded-full bg-surface-hover mb-4">
+              {filter === "Audio" ? <Mic2 className="size-5" /> : <ImagePlus className="size-5" />}
+            </div>
+            <h3 className="text-base font-semibold">No {filter.toLowerCase()} to show yet</h3>
+            <p className="mt-1 text-[13px] text-muted-foreground max-w-md mx-auto">
+              {filter} discovery is rolling out next. In the meantime, browse the For You feed below or create your own.
+            </p>
+            <a href="/create" className="mt-5 inline-flex items-center gap-2 h-9 px-4 rounded-full bg-foreground text-background text-[13px] font-medium hover:opacity-90 transition">
+              <Sparkles className="size-3.5" /> Create something
+            </a>
+          </section>
+        )}
+
         {/* Infinite waterfall feed */}
-        <WaterfallFeed kind={debouncedKind} sort={debouncedSort} />
+        <WaterfallFeed kind={debouncedKind} sort={debouncedSort} onOpen={setActive} />
       </div>
+
+      <Sheet open={!!active} onOpenChange={(o) => !o && setActive(null)}>
+        <SheetContent side="right" className="w-full sm:max-w-[460px] p-0 bg-background border-l border-border/60">
+          {active && <DetailPanel card={active} onClose={() => setActive(null)} />}
+        </SheetContent>
+      </Sheet>
     </AppShell>
+  );
+}
+
+function DetailPanel({ card, onClose }: { card: Card; onClose: () => void }) {
+  return (
+    <div className="flex flex-col h-full">
+      <div className="relative bg-surface" style={{ aspectRatio: card.ratio }}>
+        <img src={card.src} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute top-3 right-3 size-8 grid place-items-center rounded-full bg-black/55 backdrop-blur text-white/90 hover:bg-black/75"
+        >
+          <X className="size-4" />
+        </button>
+        {card.duration && (
+          <span className="absolute bottom-3 left-3 text-[12px] font-medium text-white/95 bg-black/55 backdrop-blur px-2 py-0.5 rounded">{card.duration}</span>
+        )}
+      </div>
+      <SheetHeader className="px-5 pt-5 pb-3 space-y-2 text-left">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10.5px] font-semibold uppercase tracking-wide bg-sky-500/15 text-sky-400">
+            {card.model}
+          </span>
+          <span className="inline-flex items-center gap-1 text-[12px] text-muted-foreground">
+            <Heart className="size-3" /> {card.likes.toLocaleString()}
+          </span>
+        </div>
+        <SheetTitle className="text-[17px] leading-snug">
+          {card.kind === "video" ? "Cinematic" : "Editorial"} {card.model} render
+        </SheetTitle>
+        <SheetDescription className="text-[12.5px] leading-relaxed">
+          Tap Recreate to load this prompt into the {card.kind} generator, or Reuse to start a new session with the
+          same reference image and parameters.
+        </SheetDescription>
+      </SheetHeader>
+      <div className="px-5 pb-5 space-y-3">
+        <div className="rounded-lg bg-surface p-3 text-[12px] leading-relaxed text-muted-foreground">
+          A {card.kind === "video" ? "slow cinematic dolly-in" : "high-detail editorial portrait"}, dramatic rim
+          lighting, shot on {card.model}, 35mm, shallow depth of field, magazine cover composition.
+        </div>
+        <div className="flex gap-2">
+          <button className="flex-1 h-10 rounded-md bg-foreground text-background text-[13px] font-semibold inline-flex items-center justify-center gap-1.5 hover:opacity-90">
+            <RotateCcw className="size-3.5" /> Recreate
+          </button>
+          <button className="flex-1 h-10 rounded-md bg-surface text-foreground text-[13px] font-medium inline-flex items-center justify-center gap-1.5 hover:bg-surface-hover">
+            <Repeat2 className="size-3.5" /> Reuse
+          </button>
+        </div>
+        <div className="flex gap-2">
+          <button className="flex-1 h-9 rounded-md bg-surface text-[12.5px] text-muted-foreground inline-flex items-center justify-center gap-1.5 hover:text-foreground">
+            <Download className="size-3.5" /> Download
+          </button>
+          <button className="flex-1 h-9 rounded-md bg-surface text-[12.5px] text-muted-foreground inline-flex items-center justify-center gap-1.5 hover:text-foreground">
+            <Share2 className="size-3.5" /> Share
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
