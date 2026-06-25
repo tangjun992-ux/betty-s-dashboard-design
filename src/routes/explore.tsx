@@ -207,6 +207,11 @@ function ExplorePage() {
               <SlidersHorizontal className="size-3.5" /> All Filters
             </button>
           </div>
+          {(feedKind !== debouncedKind || sort !== debouncedSort) && (
+            <span className="basis-full sm:basis-auto inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-surface text-[11.5px] text-muted-foreground">
+              <Loader2 className="size-3 animate-spin" /> Switching filter…
+            </span>
+          )}
         </div>
 
         {/* Per-model horizontal rows */}
