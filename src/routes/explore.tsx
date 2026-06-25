@@ -353,7 +353,7 @@ function DetailPanel({ card, onClose }: { card: Card; onClose: () => void }) {
 
 /* ───────────────────────── Model row with cursor pagination ──────────────── */
 
-function ModelRow({ section }: { section: (typeof featuredModels)[number] }) {
+function ModelRow({ section, onOpen }: { section: (typeof featuredModels)[number]; onOpen: (c: Card) => void }) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [cards, setCards] = useState<Card[]>([]);
