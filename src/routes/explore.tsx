@@ -701,7 +701,7 @@ function WaterfallFeed({ kind, sort, onOpen }: { kind: Kind | "all"; sort: strin
 
 /* ───────────────────────── Card ──────────────────────────────────────────── */
 
-function ExploreCard({ card, full = false }: { card: Card; full?: boolean }) {
+function ExploreCard({ card, full = false, onOpen }: { card: Card; full?: boolean; onOpen?: (c: Card) => void }) {
   const [liked, setLiked] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
