@@ -3,6 +3,7 @@ import { AppShell } from "@/components/AppShell";
 import {
   Sparkles, ArrowRight, Heart, RotateCcw, Repeat2,
   ChevronLeft, ChevronRight, SlidersHorizontal, Loader2,
+  AlertCircle, ImageOff, RefreshCw,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -41,32 +42,58 @@ const ratios = ["3/4", "2/3", "4/5", "1/1", "9/16", "3/4", "4/5"];
 const allModels = ["GPT Image 2", "Seedance 2.0", "Kling 3.0", "Veo 3.1", "Flux 1.1", "Nano Banana"];
 
 // Cursor-based fake fetcher — mimics Yapper's `?cursor=…&limit=…` API shape.
+// Fails ~12% of the time on attempt #1 so we can demo the retry UI.
 function fetchPage(opts: {
   cursor: number;
   limit: number;
   kind?: Kind | "all";
   model?: string;
   seed?: number;
+  attempt?: number;
 }): Promise<{ items: Card[]; nextCursor: number | null }> {
-  const { cursor, limit, kind = "all", model, seed = 0 } = opts;
-  const items: Card[] = Array.from({ length: limit }, (_, i) => {
-    const idx = cursor + i + seed;
-    const k: Kind = kind === "all" ? (idx % 3 === 0 ? "video" : "image") : kind;
-    const m = model ?? allModels[idx % allModels.length];
-    return {
-      id: `${m}-${idx}`,
-      src: pool[idx % pool.length],
-      ratio: ratios[idx % ratios.length],
-      kind: k,
-      model: m,
-      duration: k === "video" ? `0:${String(5 + ((idx * 7) % 50)).padStart(2, "0")}` : undefined,
-      likes: 120 + ((idx * 37 + seed * 11) % 4000),
-    };
-  });
-  const next = cursor + limit;
-  // Cap so we eventually stop (mimic exhausted feed after ~120 items).
-  const nextCursor = next >= 120 ? null : next;
-  return new Promise((res) => setTimeout(() => res({ items, nextCursor }), 280));
+  const { cursor, limit, kind = "all", model, seed = 0, attempt = 1 } = opts;
+  return new Promise((res, rej) => setTimeout(() => {
+    if (attempt === 1 && cursor > 0 && Math.random() < 0.12) {
+      rej(new Error("Network error while loading more"));
+      return;
+    }
+    const items: Card[] = Array.from({ length: limit }, (_, i) => {
+      const idx = cursor + i + seed;
+      const k: Kind = kind === "all" ? (idx % 3 === 0 ? "video" : "image") : kind;
+      const m = model ?? allModels[idx % allModels.length];
+      return {
+        id: `${m}-${idx}`,
+        src: pool[idx % pool.length],
+        ratio: ratios[idx % ratios.length],
+        kind: k,
+        model: m,
+        duration: k === "video" ? `0:${String(5 + ((idx * 7) % 50)).padStart(2, "0")}` : undefined,
+        likes: 120 + ((idx * 37 + seed * 11) % 4000),
+      };
+    });
+    const next = cursor + limit;
+    const nextCursor = next >= 120 ? null : next;
+    res({ items, nextCursor });
+  }, 480));
+}
+
+function SkeletonCard({ ratio, full = false }: { ratio: string; full?: boolean }) {
+  return (
+    <div
+      className={full ? "" : "snap-start shrink-0"}
+      style={full ? undefined : { width: "min(260px, 60vw)" }}
+    >
+      <div
+        className="relative rounded-xl overflow-hidden bg-surface animate-pulse"
+        style={{ aspectRatio: ratio }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-white/[0.07] to-white/[0.02]" />
+        <div className="absolute top-2 left-2 h-4 w-16 rounded bg-white/10" />
+        <div className="absolute bottom-2 left-2 h-3 w-10 rounded bg-white/10" />
+        <div className="absolute bottom-2 right-2 h-3 w-12 rounded bg-white/10" />
+      </div>
+    </div>
+  );
 }
 
 const filters = ["All", "Videos", "Images", "Avatars", "Audio"] as const;
@@ -174,31 +201,42 @@ function ModelRow({ section }: { section: (typeof featuredModels)[number] }) {
   const [cards, setCards] = useState<Card[]>([]);
   const [cursor, setCursor] = useState<number | null>(0);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const attemptRef = useRef(1);
 
   const loadMore = useCallback(async () => {
     if (loading || cursor === null) return;
     setLoading(true);
-    const page = await fetchPage({ cursor, limit: 8, kind: section.kind, model: section.model, seed: section.seed });
-    setCards((prev) => [...prev, ...page.items]);
-    setCursor(page.nextCursor);
-    setLoading(false);
+    setError(null);
+    try {
+      const page = await fetchPage({
+        cursor, limit: 8, kind: section.kind, model: section.model, seed: section.seed,
+        attempt: attemptRef.current,
+      });
+      attemptRef.current = 1;
+      setCards((prev) => [...prev, ...page.items]);
+      setCursor(page.nextCursor);
+    } catch (e) {
+      attemptRef.current += 1;
+      setError(e instanceof Error ? e.message : "Failed to load");
+    } finally {
+      setLoading(false);
+    }
   }, [loading, cursor, section.kind, section.model, section.seed]);
 
-  // initial load
   useEffect(() => { if (cards.length === 0) loadMore(); /* eslint-disable-next-line */ }, []);
 
-  // horizontal sentinel for "load more on scroll end"
   useEffect(() => {
     const el = sentinelRef.current;
     const root = scrollerRef.current;
-    if (!el || !root) return;
+    if (!el || !root || error) return;
     const io = new IntersectionObserver(
       (entries) => entries.forEach((e) => e.isIntersecting && loadMore()),
       { root, rootMargin: "0px 600px 0px 0px", threshold: 0 },
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [loadMore]);
+  }, [loadMore, error]);
 
   const scroll = (dir: 1 | -1) => {
     const el = scrollerRef.current;
@@ -239,9 +277,27 @@ function ModelRow({ section }: { section: (typeof featuredModels)[number] }) {
         className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory -mx-6 lg:-mx-8 px-6 lg:px-8 pb-2"
       >
         {cards.map((c) => <ExploreCard key={c.id} card={c} />)}
-        {cursor !== null && (
+
+        {loading && Array.from({ length: 6 }).map((_, i) => (
+          <SkeletonCard key={`sk-${i}`} ratio={ratios[(i + section.seed) % ratios.length]} />
+        ))}
+
+        {error && (
+          <div className="shrink-0 w-64 grid place-items-center rounded-xl bg-surface border border-border/40 p-4 text-center">
+            <AlertCircle className="size-5 text-rose-400 mb-2" />
+            <p className="text-[12px] text-muted-foreground mb-2">{error}</p>
+            <button
+              onClick={loadMore}
+              className="inline-flex items-center gap-1.5 h-7 px-3 rounded-md bg-surface-hover text-[11px] font-medium hover:bg-white/10"
+            >
+              <RefreshCw className="size-3" /> Retry
+            </button>
+          </div>
+        )}
+
+        {!loading && !error && cursor !== null && (
           <div ref={sentinelRef} className="shrink-0 w-40 grid place-items-center text-muted-foreground">
-            {loading ? <Loader2 className="size-4 animate-spin" /> : <span className="text-xs">Load more →</span>}
+            <span className="text-xs">Load more →</span>
           </div>
         )}
       </div>
@@ -249,39 +305,49 @@ function ModelRow({ section }: { section: (typeof featuredModels)[number] }) {
   );
 }
 
-/* ───────────────────────── Infinite waterfall (masonry) ──────────────────── */
-
 function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
   const [items, setItems] = useState<Card[]>([]);
   const [cursor, setCursor] = useState<number | null>(0);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const attemptRef = useRef(1);
 
   // Reset when filters change (Yapper resets the cursor when sort/kind changes).
   useEffect(() => {
     setItems([]);
     setCursor(0);
+    setError(null);
+    attemptRef.current = 1;
   }, [kind, sort]);
 
   const loadMore = useCallback(async () => {
     if (loading || cursor === null) return;
     setLoading(true);
-    const page = await fetchPage({ cursor, limit: 18, kind, seed: 13 });
-    setItems((prev) => [...prev, ...page.items]);
-    setCursor(page.nextCursor);
-    setLoading(false);
+    setError(null);
+    try {
+      const page = await fetchPage({ cursor, limit: 18, kind, seed: 13, attempt: attemptRef.current });
+      attemptRef.current = 1;
+      setItems((prev) => [...prev, ...page.items]);
+      setCursor(page.nextCursor);
+    } catch (e) {
+      attemptRef.current += 1;
+      setError(e instanceof Error ? e.message : "Failed to load");
+    } finally {
+      setLoading(false);
+    }
   }, [loading, cursor, kind]);
 
   useEffect(() => {
     const el = sentinelRef.current;
-    if (!el) return;
+    if (!el || error) return;
     const io = new IntersectionObserver(
       (entries) => entries.forEach((e) => e.isIntersecting && loadMore()),
       { rootMargin: "1200px 0px 1200px 0px" },
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [loadMore]);
+  }, [loadMore, error]);
 
   return (
     <section>
@@ -298,10 +364,26 @@ function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
             <ExploreCard card={c} full />
           </div>
         ))}
+        {loading && Array.from({ length: 10 }).map((_, i) => (
+          <div key={`wsk-${i}`} className="mb-3 break-inside-avoid">
+            <SkeletonCard ratio={ratios[(i * 3) % ratios.length]} full />
+          </div>
+        ))}
       </div>
 
-      <div ref={sentinelRef} className="mt-6 h-16 grid place-items-center text-muted-foreground">
-        {cursor === null ? (
+      <div ref={sentinelRef} className="mt-6 min-h-16 grid place-items-center text-muted-foreground">
+        {error ? (
+          <div className="flex flex-col items-center gap-2 py-4">
+            <AlertCircle className="size-5 text-rose-400" />
+            <p className="text-[12px]">{error}</p>
+            <button
+              onClick={loadMore}
+              className="inline-flex items-center gap-1.5 h-8 px-4 rounded-md bg-surface hover:bg-surface-hover text-[12px] font-medium"
+            >
+              <RefreshCw className="size-3.5" /> Retry
+            </button>
+          </div>
+        ) : cursor === null ? (
           <span className="text-xs">You've reached the end.</span>
         ) : loading ? (
           <span className="inline-flex items-center gap-2 text-xs"><Loader2 className="size-4 animate-spin" /> Loading…</span>
@@ -317,14 +399,67 @@ function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
 
 function ExploreCard({ card, full = false }: { card: Card; full?: boolean }) {
   const [liked, setLiked] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [errored, setErrored] = useState(false);
+  const [imgKey, setImgKey] = useState(0);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+
+  // Catch "complete-before-onload" cache hits.
+  useEffect(() => {
+    const el = imgRef.current;
+    if (el && el.complete && el.naturalWidth > 0) setLoaded(true);
+  }, [imgKey]);
+
+  const retryImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setErrored(false);
+    setLoaded(false);
+    setImgKey((k) => k + 1);
+  };
+
   return (
     <div
       className={`group cursor-pointer ${full ? "" : "snap-start shrink-0"}`}
       style={full ? undefined : { width: "min(260px, 60vw)" }}
     >
       <div className="relative rounded-xl overflow-hidden bg-surface" style={{ aspectRatio: card.ratio }}>
-        <img src={card.src} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/0 to-black/0 opacity-90" />
+        {/* Skeleton shimmer until the image fires onLoad */}
+        {!loaded && !errored && (
+          <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-white/[0.04] via-white/[0.08] to-white/[0.02]" />
+        )}
+
+        {!errored && (
+          <img
+            ref={imgRef}
+            key={imgKey}
+            src={`${card.src}${imgKey ? `?r=${imgKey}` : ""}`}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            onLoad={() => setLoaded(true)}
+            onError={() => setErrored(true)}
+            className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-105 ${
+              loaded ? "opacity-100" : "opacity-0"
+            }`}
+          />
+        )}
+
+        {errored && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-surface text-muted-foreground">
+            <ImageOff className="size-5" />
+            <p className="text-[11px]">Couldn't load</p>
+            <button
+              onClick={retryImage}
+              className="inline-flex items-center gap-1 h-6 px-2.5 rounded-md bg-surface-hover text-[10.5px] font-medium hover:bg-white/10"
+            >
+              <RefreshCw className="size-3" /> Retry
+            </button>
+          </div>
+        )}
+
+        {loaded && !errored && (
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/0 to-black/0 opacity-90 pointer-events-none" />
+        )}
 
         <div className="absolute top-2 left-2 flex items-center gap-1.5">
           <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-black/55 backdrop-blur text-white/90">
@@ -339,21 +474,25 @@ function ExploreCard({ card, full = false }: { card: Card; full?: boolean }) {
           <Heart className={`size-3.5 ${liked ? "fill-rose-500 text-rose-500" : ""}`} />
         </button>
 
-        {card.duration && (
+        {card.duration && loaded && (
           <span className="absolute bottom-2 left-2 text-[11px] font-medium text-white/90">{card.duration}</span>
         )}
-        <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 text-[11px] text-white/85">
-          <Heart className="size-3" /> {card.likes.toLocaleString()}
-        </span>
+        {loaded && (
+          <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 text-[11px] text-white/85">
+            <Heart className="size-3" /> {card.likes.toLocaleString()}
+          </span>
+        )}
 
-        <div className="absolute inset-x-2 bottom-2 flex gap-1.5 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200">
-          <button className="flex-1 h-7 rounded-md bg-white/95 text-[11px] font-semibold text-background inline-flex items-center justify-center gap-1 hover:bg-white">
-            <RotateCcw className="size-3" /> Recreate
-          </button>
-          <button className="flex-1 h-7 rounded-md bg-white/10 backdrop-blur text-white text-[11px] font-medium inline-flex items-center justify-center gap-1 hover:bg-white/20">
-            <Repeat2 className="size-3" /> Reuse
-          </button>
-        </div>
+        {loaded && !errored && (
+          <div className="absolute inset-x-2 bottom-2 flex gap-1.5 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200">
+            <button className="flex-1 h-7 rounded-md bg-white/95 text-[11px] font-semibold text-background inline-flex items-center justify-center gap-1 hover:bg-white">
+              <RotateCcw className="size-3" /> Recreate
+            </button>
+            <button className="flex-1 h-7 rounded-md bg-white/10 backdrop-blur text-white text-[11px] font-medium inline-flex items-center justify-center gap-1 hover:bg-white/20">
+              <Repeat2 className="size-3" /> Reuse
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
