@@ -1,12 +1,14 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import {
   Sparkles, ArrowRight, Heart, RotateCcw, Repeat2,
   ChevronLeft, ChevronRight, SlidersHorizontal, Loader2,
-  AlertCircle, ImageOff, RefreshCw,
+  AlertCircle, ImageOff, RefreshCw, X, Download, Share2,
+  ImagePlus, Mic2,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, KeyboardEvent as ReactKeyboardEvent } from "react";
 import { toast } from "sonner";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 
 import toolSeedance from "@/assets/tool-seedance.jpg";
 import toolMotion from "@/assets/tool-motion.jpg";
@@ -19,8 +21,16 @@ import bannerInfluencers from "@/assets/banner-influencers.jpg";
 import bannerTutorial from "@/assets/banner-tutorial.jpg";
 import bannerEarn from "@/assets/banner-earn.jpg";
 
+type SearchParams = { filter?: string; sort?: string };
+const validFilters = ["All", "Videos", "Images", "Avatars", "Audio"] as const;
+const validSorts = ["Trending", "Newest", "Most Liked"] as const;
+
 export const Route = createFileRoute("/explore")({
   head: () => ({ meta: [{ title: "Explore — Betty" }] }),
+  validateSearch: (search: Record<string, unknown>): SearchParams => ({
+    filter: validFilters.includes(search.filter as never) ? (search.filter as string) : undefined,
+    sort: validSorts.includes(search.sort as never) ? (search.sort as string) : undefined,
+  }),
   component: ExplorePage,
 });
 
@@ -130,9 +140,37 @@ const featuredModels = [
   { id: "veo", model: "Veo 3.1", tagline: "Cinematic 1080p clips with native audio", badge: "Audio", kind: "video" as const, seed: 7 },
 ];
 
+type Filter = (typeof validFilters)[number];
+type Sort = (typeof validSorts)[number];
+
 function ExplorePage() {
-  const [filter, setFilter] = useState<(typeof filters)[number]>("All");
-  const [sort, setSort] = useState<(typeof sorts)[number]>("Trending");
+  const search = Route.useSearch();
+  const navigate = useNavigate({ from: "/explore" });
+
+  const filter = (search.filter as Filter) ?? "All";
+  const sort = (search.sort as Sort) ?? "Trending";
+
+  const setFilter = (f: Filter) =>
+    navigate({ search: (s: SearchParams) => ({ ...s, filter: f === "All" ? undefined : f }), replace: true });
+  const setSort = (s: Sort) =>
+    navigate({ search: (prev: SearchParams) => ({ ...prev, sort: s === "Trending" ? undefined : s }), replace: true });
+
+  const [active, setActive] = useState<Card | null>(null);
+
+  const filterBarRef = useRef<HTMLDivElement | null>(null);
+  const onFilterKey = (e: ReactKeyboardEvent<HTMLButtonElement>, idx: number) => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight" && e.key !== "Home" && e.key !== "End") return;
+    e.preventDefault();
+    const buttons = filterBarRef.current?.querySelectorAll<HTMLButtonElement>("button[data-filter]");
+    if (!buttons?.length) return;
+    let next = idx;
+    if (e.key === "ArrowLeft") next = (idx - 1 + buttons.length) % buttons.length;
+    else if (e.key === "ArrowRight") next = (idx + 1) % buttons.length;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = buttons.length - 1;
+    buttons[next].focus();
+    buttons[next].click();
+  };
 
   const visibleRows = useMemo(() => {
     if (filter === "Videos") return featuredModels.filter((s) => s.kind === "video");
@@ -144,9 +182,10 @@ function ExplorePage() {
   const feedKind: Kind | "all" =
     filter === "Videos" ? "video" : filter === "Images" ? "image" : "all";
 
-  // Debounce filter/sort so rapid clicks don't kick off a stampede of fetches.
   const debouncedKind = useDebounced(feedKind, 180);
   const debouncedSort = useDebounced(sort, 180);
+
+  const emptyKind = filter === "Avatars" || filter === "Audio";
 
   return (
     <AppShell>
@@ -182,12 +221,17 @@ function ExplorePage() {
 
         {/* Filter bar */}
         <div className="sticky top-0 z-20 -mx-6 lg:-mx-8 px-6 lg:px-8 py-3 bg-background/85 backdrop-blur border-b border-border/40 flex flex-wrap items-center gap-3">
-          <div className="flex p-0.5 rounded-lg bg-surface text-[13px]">
-            {filters.map((t) => (
+          <div ref={filterBarRef} role="tablist" aria-label="Content type" className="flex p-0.5 rounded-lg bg-surface text-[13px]">
+            {validFilters.map((t, i) => (
               <button
                 key={t}
+                data-filter
+                role="tab"
+                aria-selected={filter === t}
+                tabIndex={filter === t ? 0 : -1}
                 onClick={() => setFilter(t)}
-                className={`px-3 h-8 rounded-md transition-colors ${
+                onKeyDown={(e) => onFilterKey(e, i)}
+                className={`px-3 h-8 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 ${
                   filter === t ? "bg-surface-hover text-foreground" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
@@ -198,10 +242,11 @@ function ExplorePage() {
           <div className="flex items-center gap-2 ml-auto">
             <select
               value={sort}
-              onChange={(e) => setSort(e.target.value as (typeof sorts)[number])}
-              className="h-8 px-3 rounded-md bg-surface text-[13px] focus:outline-none"
+              onChange={(e) => setSort(e.target.value as Sort)}
+              aria-label="Sort"
+              className="h-8 px-3 rounded-md bg-surface text-[13px] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/60"
             >
-              {sorts.map((s) => <option key={s}>{s}</option>)}
+              {validSorts.map((s) => <option key={s}>{s}</option>)}
             </select>
             <button className="h-8 px-3 rounded-md bg-surface text-[13px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5">
               <SlidersHorizontal className="size-3.5" /> All Filters
@@ -216,19 +261,99 @@ function ExplorePage() {
 
         {/* Per-model horizontal rows */}
         {visibleRows.map((section) => (
-          <ModelRow key={section.id} section={section} />
+          <ModelRow key={section.id} section={section} onOpen={setActive} />
         ))}
 
+        {emptyKind && (
+          <section className="rounded-2xl bg-surface/60 border border-border/40 p-10 text-center">
+            <div className="mx-auto size-12 grid place-items-center rounded-full bg-surface-hover mb-4">
+              {filter === "Audio" ? <Mic2 className="size-5" /> : <ImagePlus className="size-5" />}
+            </div>
+            <h3 className="text-base font-semibold">No {filter.toLowerCase()} to show yet</h3>
+            <p className="mt-1 text-[13px] text-muted-foreground max-w-md mx-auto">
+              {filter} discovery is rolling out next. In the meantime, browse the For You feed below or create your own.
+            </p>
+            <a href="/create" className="mt-5 inline-flex items-center gap-2 h-9 px-4 rounded-full bg-foreground text-background text-[13px] font-medium hover:opacity-90 transition">
+              <Sparkles className="size-3.5" /> Create something
+            </a>
+          </section>
+        )}
+
         {/* Infinite waterfall feed */}
-        <WaterfallFeed kind={debouncedKind} sort={debouncedSort} />
+        <WaterfallFeed kind={debouncedKind} sort={debouncedSort} onOpen={setActive} />
       </div>
+
+      <Sheet open={!!active} onOpenChange={(o) => !o && setActive(null)}>
+        <SheetContent side="right" className="w-full sm:max-w-[460px] p-0 bg-background border-l border-border/60">
+          {active && <DetailPanel card={active} onClose={() => setActive(null)} />}
+        </SheetContent>
+      </Sheet>
     </AppShell>
+  );
+}
+
+function DetailPanel({ card, onClose }: { card: Card; onClose: () => void }) {
+  return (
+    <div className="flex flex-col h-full">
+      <div className="relative bg-surface" style={{ aspectRatio: card.ratio }}>
+        <img src={card.src} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute top-3 right-3 size-8 grid place-items-center rounded-full bg-black/55 backdrop-blur text-white/90 hover:bg-black/75"
+        >
+          <X className="size-4" />
+        </button>
+        {card.duration && (
+          <span className="absolute bottom-3 left-3 text-[12px] font-medium text-white/95 bg-black/55 backdrop-blur px-2 py-0.5 rounded">{card.duration}</span>
+        )}
+      </div>
+      <SheetHeader className="px-5 pt-5 pb-3 space-y-2 text-left">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10.5px] font-semibold uppercase tracking-wide bg-sky-500/15 text-sky-400">
+            {card.model}
+          </span>
+          <span className="inline-flex items-center gap-1 text-[12px] text-muted-foreground">
+            <Heart className="size-3" /> {card.likes.toLocaleString()}
+          </span>
+        </div>
+        <SheetTitle className="text-[17px] leading-snug">
+          {card.kind === "video" ? "Cinematic" : "Editorial"} {card.model} render
+        </SheetTitle>
+        <SheetDescription className="text-[12.5px] leading-relaxed">
+          Tap Recreate to load this prompt into the {card.kind} generator, or Reuse to start a new session with the
+          same reference image and parameters.
+        </SheetDescription>
+      </SheetHeader>
+      <div className="px-5 pb-5 space-y-3">
+        <div className="rounded-lg bg-surface p-3 text-[12px] leading-relaxed text-muted-foreground">
+          A {card.kind === "video" ? "slow cinematic dolly-in" : "high-detail editorial portrait"}, dramatic rim
+          lighting, shot on {card.model}, 35mm, shallow depth of field, magazine cover composition.
+        </div>
+        <div className="flex gap-2">
+          <button className="flex-1 h-10 rounded-md bg-foreground text-background text-[13px] font-semibold inline-flex items-center justify-center gap-1.5 hover:opacity-90">
+            <RotateCcw className="size-3.5" /> Recreate
+          </button>
+          <button className="flex-1 h-10 rounded-md bg-surface text-foreground text-[13px] font-medium inline-flex items-center justify-center gap-1.5 hover:bg-surface-hover">
+            <Repeat2 className="size-3.5" /> Reuse
+          </button>
+        </div>
+        <div className="flex gap-2">
+          <button className="flex-1 h-9 rounded-md bg-surface text-[12.5px] text-muted-foreground inline-flex items-center justify-center gap-1.5 hover:text-foreground">
+            <Download className="size-3.5" /> Download
+          </button>
+          <button className="flex-1 h-9 rounded-md bg-surface text-[12.5px] text-muted-foreground inline-flex items-center justify-center gap-1.5 hover:text-foreground">
+            <Share2 className="size-3.5" /> Share
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
 /* ───────────────────────── Model row with cursor pagination ──────────────── */
 
-function ModelRow({ section }: { section: (typeof featuredModels)[number] }) {
+function ModelRow({ section, onOpen }: { section: (typeof featuredModels)[number]; onOpen: (c: Card) => void }) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [cards, setCards] = useState<Card[]>([]);
@@ -309,7 +434,7 @@ function ModelRow({ section }: { section: (typeof featuredModels)[number] }) {
         ref={scrollerRef}
         className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory -mx-6 lg:-mx-8 px-6 lg:px-8 pb-2"
       >
-        {cards.map((c) => <ExploreCard key={c.id} card={c} />)}
+        {cards.map((c) => <ExploreCard key={c.id} card={c} onOpen={onOpen} />)}
 
         {loading && Array.from({ length: 6 }).map((_, i) => (
           <SkeletonCard key={`sk-${i}`} ratio={ratios[(i + section.seed) % ratios.length]} />
@@ -346,7 +471,7 @@ type FeedSnapshot = {
 const feedCache = new Map<string, FeedSnapshot>();
 let lastFeedKey: string | null = null;
 
-function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
+function WaterfallFeed({ kind, sort, onOpen }: { kind: Kind | "all"; sort: string; onOpen: (c: Card) => void }) {
   const key = `${kind}|${sort}`;
   const cached = feedCache.get(key);
 
@@ -540,7 +665,7 @@ function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
       <div className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-3 [column-fill:_balance]">
         {items.map((c) => (
           <div key={c.id} className="mb-3 break-inside-avoid">
-            <ExploreCard card={c} full />
+            <ExploreCard card={c} full onOpen={onOpen} />
           </div>
         ))}
         {loading && Array.from({ length: 10 }).map((_, i) => (
@@ -576,7 +701,7 @@ function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
 
 /* ───────────────────────── Card ──────────────────────────────────────────── */
 
-function ExploreCard({ card, full = false }: { card: Card; full?: boolean }) {
+function ExploreCard({ card, full = false, onOpen }: { card: Card; full?: boolean; onOpen?: (c: Card) => void }) {
   const [liked, setLiked] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
@@ -598,7 +723,11 @@ function ExploreCard({ card, full = false }: { card: Card; full?: boolean }) {
 
   return (
     <div
-      className={`group cursor-pointer ${full ? "" : "snap-start shrink-0"}`}
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpen?.(card)}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen?.(card); } }}
+      className={`group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 rounded-xl ${full ? "" : "snap-start shrink-0"}`}
       style={full ? undefined : { width: "min(260px, 60vw)" }}
     >
       <div className="relative rounded-xl overflow-hidden bg-surface" style={{ aspectRatio: card.ratio }}>
