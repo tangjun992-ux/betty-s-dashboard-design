@@ -3,7 +3,9 @@ import { AppShell } from "@/components/AppShell";
 import {
   Sparkles, ArrowRight, Heart, RotateCcw, Repeat2,
   ChevronLeft, ChevronRight, SlidersHorizontal, Loader2,
+  AlertCircle, ImageOff, RefreshCw,
 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import toolSeedance from "@/assets/tool-seedance.jpg";
