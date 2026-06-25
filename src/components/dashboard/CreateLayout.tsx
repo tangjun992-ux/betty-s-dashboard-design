@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { AppShell } from "@/components/AppShell";
 
 export function CreateLayout({
   title,
@@ -12,20 +13,22 @@ export function CreateLayout({
   preview: ReactNode;
 }) {
   return (
-    <div className="px-6 lg:px-10 py-6 max-w-[1600px] mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        {subtitle && <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>}
+    <AppShell>
+      <div className="px-6 lg:px-10 py-6 max-w-[1600px] mx-auto">
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+          {subtitle && <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6">
+          <aside className="rounded-xl border border-border bg-surface p-5 space-y-5 h-fit">
+            {controls}
+          </aside>
+          <section className="rounded-xl border border-border bg-surface min-h-[520px] p-5">
+            {preview}
+          </section>
+        </div>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6">
-        <aside className="rounded-xl border border-border bg-surface p-5 space-y-5 h-fit">
-          {controls}
-        </aside>
-        <section className="rounded-xl border border-border bg-surface min-h-[520px] p-5">
-          {preview}
-        </section>
-      </div>
-    </div>
+    </AppShell>
   );
 }
 
