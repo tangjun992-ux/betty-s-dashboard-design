@@ -14,7 +14,7 @@ import {
   Wand2,
 } from "lucide-react";
 
-import { AppSidebar } from "@/components/AppSidebar";
+import { AppShell } from "@/components/AppShell";
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { ToolPill } from "@/components/dashboard/ToolPill";
 import { MediaCard } from "@/components/dashboard/MediaCard";
@@ -39,36 +39,15 @@ export const Route = createFileRoute("/")({
         content:
           "Betty is your AI creative studio. Generate videos, images, lipsync, motion control and more — all in one place.",
       },
-      { property: "og:title", content: "Betty — Create AI videos, images & avatars" },
-      {
-        property: "og:description",
-        content:
-          "Betty is your AI creative studio. Generate videos, images, lipsync, motion control and more — all in one place.",
-      },
     ],
   }),
   component: Dashboard,
 });
 
 const banners = [
-  {
-    image: bannerEarn,
-    tag: "New",
-    tagClass: "bg-emerald-500/15 text-emerald-400",
-    title: "Get paid to create — join a Betty Earn campaign",
-  },
-  {
-    image: bannerInfluencers,
-    tag: "Tutorial",
-    tagClass: "bg-sky-500/15 text-sky-400",
-    title: "Learn how to create realistic AI UGC",
-  },
-  {
-    image: bannerTutorial,
-    tag: "Tutorial",
-    tagClass: "bg-sky-500/15 text-sky-400",
-    title: "Learn to create consistent long-form videos",
-  },
+  { image: bannerEarn, tag: "New", tagClass: "bg-emerald-500/15 text-emerald-400", title: "Get paid to create — join a Betty Earn campaign" },
+  { image: bannerInfluencers, tag: "Tutorial", tagClass: "bg-sky-500/15 text-sky-400", title: "Learn how to create realistic AI UGC" },
+  { image: bannerTutorial, tag: "Tutorial", tagClass: "bg-sky-500/15 text-sky-400", title: "Learn to create consistent long-form videos" },
 ];
 
 const popularTools = [
@@ -83,81 +62,19 @@ const popularTools = [
 ];
 
 const videoTools = [
-  {
-    image: toolSeedance,
-    tag: "Video",
-    title: "Seedance 2.0 Omni-Video",
-    description:
-      "Generate videos with multi-modal input, lip sync, and multi-shot narrative.",
-  },
-  {
-    image: bannerTutorial,
-    tag: "Video",
-    title: "Studio Lip-Syncing",
-    description:
-      "Create satire clips, avatar videos, or a personal clone with our lip-syncing technology.",
-    hasExamples: true,
-  },
-  {
-    image: toolMotion,
-    tag: "Video",
-    title: "Motion Control",
-    description:
-      "Generate videos with precise motion guidance using reference videos and characters.",
-  },
-  {
-    image: toolAvatar,
-    tag: "Video",
-    title: "Talking Avatar",
-    description:
-      "Image and audio to video creation. Turn any image into a talking avatar with lip-sync.",
-  },
-  {
-    image: toolVideogen,
-    tag: "Video",
-    title: "Video Generation",
-    description:
-      "Create viral content, advertisements, and more with our AI-powered video generator.",
-    hasExamples: true,
-  },
+  { image: toolSeedance, tag: "Video", title: "Seedance 2.0 Omni-Video", description: "Generate videos with multi-modal input, lip sync, and multi-shot narrative." },
+  { image: bannerTutorial, tag: "Video", title: "Studio Lip-Syncing", description: "Create satire clips, avatar videos, or a personal clone with our lip-syncing technology.", hasExamples: true },
+  { image: toolMotion, tag: "Video", title: "Motion Control", description: "Generate videos with precise motion guidance using reference videos and characters." },
+  { image: toolAvatar, tag: "Video", title: "Talking Avatar", description: "Image and audio to video creation. Turn any image into a talking avatar with lip-sync." },
+  { image: toolVideogen, tag: "Video", title: "Video Generation", description: "Create viral content, advertisements, and more with our AI-powered video generator.", hasExamples: true },
 ];
 
 const imageTools = [
-  {
-    image: toolImagegen,
-    tag: "Image",
-    title: "Pro Image Editor",
-    description: "Advanced AI-powered image editing tools for professional results.",
-  },
-  {
-    image: toolProduct,
-    tag: "Image",
-    title: "Stunning Product Shots",
-    description:
-      "Generate a batch of professional images of your product with AI in minutes.",
-  },
-  {
-    image: toolHeadshot,
-    tag: "Image",
-    title: "Professional Headshots",
-    description:
-      "Generate polished, professional headshots perfect for LinkedIn and resumes.",
-  },
-  {
-    image: toolAvatar,
-    tag: "Image",
-    title: "AI Photo Packs",
-    description:
-      "Choose from a variety of photo packs to generate a set of photos tailored to your needs.",
-  },
-  {
-    image: toolImagegen,
-    tag: "Image",
-    title: "Pro Image Generation",
-    description:
-      "Create realistic UGC content and product visuals for your social media.",
-    hasExamples: true,
-  },
+  { image: toolImagegen, tag: "Image", title: "Pro Image Editor", description: "Advanced AI-powered image editing tools for professional results." },
+  { image: toolProduct, tag: "Image", title: "Stunning Product Shots", description: "Generate a batch of professional images of your product with AI in minutes." },
+  { image: toolHeadshot, tag: "Image", title: "Professional Headshots", description: "Generate polished, professional headshots perfect for LinkedIn and resumes." },
+  { image: toolAvatar, tag: "Image", title: "AI Photo Packs", description: "Choose from a variety of photo packs to generate a set of photos tailored to your needs." },
+  { image: toolImagegen, tag: "Image", title: "Pro Image Generation", description: "Create realistic UGC content and product visuals for your social media.", hasExamples: true },
 ];
 
 const creatorExamples = [
@@ -168,134 +85,85 @@ const creatorExamples = [
 
 function Dashboard() {
   return (
-    <div className="min-h-screen flex bg-background text-foreground">
-      <AppSidebar />
+    <AppShell>
+      <div className="px-6 lg:px-10 py-6 max-w-[1600px] mx-auto space-y-12">
+        <section>
+          <div className="flex gap-4 overflow-x-auto scrollbar-hide -mx-6 lg:-mx-10 px-6 lg:px-10 pb-2">
+            {banners.map((b) => (
+              <a key={b.title} href="#" className="group shrink-0 w-[min(720px,80vw)]">
+                <div className="relative aspect-[16/7] rounded-2xl overflow-hidden border border-border/60">
+                  <img src={b.image} alt={b.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]" />
+                </div>
+                <div className="mt-3 flex items-baseline gap-3">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold uppercase tracking-wide ${b.tagClass}`}>{b.tag}</span>
+                  <h3 className="text-[15px] font-medium text-foreground/90 group-hover:text-foreground">{b.title}</h3>
+                </div>
+              </a>
+            ))}
+          </div>
+        </section>
 
-      <main className="flex-1 min-w-0">
-        <div className="px-6 lg:px-10 py-6 max-w-[1600px] mx-auto space-y-12">
-          {/* Banner row */}
-          <section>
-            <div className="flex gap-4 overflow-x-auto scrollbar-hide -mx-6 lg:-mx-10 px-6 lg:px-10 pb-2">
-              {banners.map((b) => (
-                <a
-                  key={b.title}
-                  href="#"
-                  className="group shrink-0 w-[min(720px,80vw)]"
-                >
-                  <div className="relative aspect-[16/7] rounded-2xl overflow-hidden border border-border/60">
-                    <img
-                      src={b.image}
-                      alt={b.title}
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-                    />
-                  </div>
-                  <div className="mt-3 flex items-baseline gap-3">
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold uppercase tracking-wide ${b.tagClass}`}
-                    >
-                      {b.tag}
+        <section>
+          <SectionHeader icon={Bookmark} title="Popular Tools" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-3">
+            {popularTools.map((t) => <ToolPill key={t.label} {...t} />)}
+          </div>
+        </section>
+
+        <section>
+          <SectionHeader icon={Film} title="Video Tools" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
+            {videoTools.map((t) => <MediaCard key={t.title} {...t} />)}
+          </div>
+        </section>
+
+        <section>
+          <SectionHeader icon={Brush} title="Image Tools" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
+            {imageTools.map((t) => <MediaCard key={t.title} {...t} />)}
+          </div>
+        </section>
+
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Wand2 className="size-4 text-muted-foreground" />
+              <h2 className="text-base font-semibold">Creator Examples</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex p-0.5 rounded-lg bg-surface border border-border text-[13px]">
+                {["All", "Videos", "Images"].map((t, i) => (
+                  <button key={t} className={`px-3 h-7 rounded-md transition-colors ${i === 0 ? "bg-surface-hover text-foreground" : "text-muted-foreground hover:text-foreground"}`}>{t}</button>
+                ))}
+              </div>
+              <button className="h-8 px-3 rounded-md bg-surface border border-border text-[13px] text-muted-foreground hover:text-foreground">All Filters</button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {creatorExamples.map((img, i) => (
+              <div key={i} className="group cursor-pointer">
+                <div className="relative aspect-[3/4] rounded-xl overflow-hidden border border-border/60 bg-surface">
+                  <img src={img} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-90" />
+                  <div className="absolute top-2 left-2">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-black/60 backdrop-blur text-white/90">
+                      {i % 3 === 0 ? "Seedance 2.0" : i % 3 === 1 ? "Kling 3.0" : "Agent"}
                     </span>
-                    <h3 className="text-[15px] font-medium text-foreground/90 group-hover:text-foreground">
-                      {b.title}
-                    </h3>
                   </div>
-                </a>
-              ))}
-            </div>
-          </section>
-
-          {/* Popular Tools */}
-          <section>
-            <SectionHeader icon={Bookmark} title="Popular Tools" />
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-3">
-              {popularTools.map((t) => (
-                <ToolPill key={t.label} {...t} />
-              ))}
-            </div>
-          </section>
-
-          {/* Video Tools */}
-          <section>
-            <SectionHeader icon={Film} title="Video Tools" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
-              {videoTools.map((t) => (
-                <MediaCard key={t.title} {...t} />
-              ))}
-            </div>
-          </section>
-
-          {/* Image Tools */}
-          <section>
-            <SectionHeader icon={Brush} title="Image Tools" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
-              {imageTools.map((t) => (
-                <MediaCard key={t.title} {...t} />
-              ))}
-            </div>
-          </section>
-
-          {/* Creator Examples */}
-          <section>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Wand2 className="size-4 text-muted-foreground" />
-                <h2 className="text-base font-semibold">Creator Examples</h2>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex p-0.5 rounded-lg bg-surface border border-border text-[13px]">
-                  {["All", "Videos", "Images"].map((t, i) => (
-                    <button
-                      key={t}
-                      className={`px-3 h-7 rounded-md transition-colors ${
-                        i === 0
-                          ? "bg-surface-hover text-foreground"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {t}
-                    </button>
-                  ))}
-                </div>
-                <button className="h-8 px-3 rounded-md bg-surface border border-border text-[13px] text-muted-foreground hover:text-foreground">
-                  All Filters
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {creatorExamples.map((img, i) => (
-                <div key={i} className="group cursor-pointer">
-                  <div className="relative aspect-[3/4] rounded-xl overflow-hidden border border-border/60 bg-surface">
-                    <img
-                      src={img}
-                      alt=""
-                      loading="lazy"
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-90" />
-                    <div className="absolute top-2 left-2">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-black/60 backdrop-blur text-white/90">
-                        {i % 3 === 0 ? "Seedance 2.0" : i % 3 === 1 ? "Kling 3.0" : "Agent"}
-                      </span>
-                    </div>
-                    <div className="absolute bottom-2 left-2 text-[11px] font-medium text-white/85">
-                      {i % 4 === 0 ? "1.00min" : `${8 + (i % 3) * 5}s`}
-                    </div>
-                  </div>
-                  <div className="mt-2 flex gap-1.5">
-                    <button className="flex-1 h-7 rounded-md bg-surface hover:bg-surface-hover border border-border text-[11px] font-medium">
-                      Recreate
-                    </button>
-                    <button className="flex-1 h-7 rounded-md bg-surface hover:bg-surface-hover border border-border text-[11px] font-medium text-muted-foreground">
-                      Reuse Inputs
-                    </button>
+                  <div className="absolute bottom-2 left-2 text-[11px] font-medium text-white/85">
+                    {i % 4 === 0 ? "1.00min" : `${8 + (i % 3) * 5}s`}
                   </div>
                 </div>
-              ))}
-            </div>
-          </section>
-        </div>
-      </main>
-    </div>
+                <div className="mt-2 flex gap-1.5">
+                  <button className="flex-1 h-7 rounded-md bg-surface hover:bg-surface-hover border border-border text-[11px] font-medium">Recreate</button>
+                  <button className="flex-1 h-7 rounded-md bg-surface hover:bg-surface-hover border border-border text-[11px] font-medium text-muted-foreground">Reuse Inputs</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+    </AppShell>
   );
 }
