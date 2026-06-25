@@ -471,7 +471,7 @@ type FeedSnapshot = {
 const feedCache = new Map<string, FeedSnapshot>();
 let lastFeedKey: string | null = null;
 
-function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
+function WaterfallFeed({ kind, sort, onOpen }: { kind: Kind | "all"; sort: string; onOpen: (c: Card) => void }) {
   const key = `${kind}|${sort}`;
   const cached = feedCache.get(key);
 
