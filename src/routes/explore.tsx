@@ -383,10 +383,19 @@ function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
   useEffect(() => {
     if (keyRef.current === key) return;
     // Cancel any in-flight fetch from the previous key — its result must not land.
+    const hadInFlight = !!abortRef.current;
     abortRef.current?.abort();
     abortRef.current = null;
     reqIdRef.current += 1;
     setLoading(false);
+    toast.dismiss("feed-loading");
+    if (hadInFlight) {
+      toast.info("Cancelled previous request", {
+        id: "feed-cancel",
+        description: `Switched to ${kind === "all" ? "All" : kind} · ${sort}`,
+        duration: 1800,
+      });
+    }
 
     // Persist outgoing key's snapshot.
     feedCache.set(keyRef.current, { items, cursor, scrollY: window.scrollY });
@@ -408,6 +417,7 @@ function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
       setCursor(0);
       setError(null);
       attemptRef.current = 1;
+      toast.loading(`Loading ${kind === "all" ? "All" : kind} · ${sort}…`, { id: "feed-loading" });
       requestAnimationFrame(() => {
         sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
         restoredRef.current = true;
