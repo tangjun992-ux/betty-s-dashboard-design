@@ -392,14 +392,14 @@ function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
     abortRef.current = null;
     reqIdRef.current += 1;
     setLoading(false);
-    toast.dismiss("feed-loading");
+
+    // Coalesce cancellations: count them, but defer the toast so a flurry of
+    // clicks resolves to one summary instead of N stacked toasts.
     if (hadInFlight) {
-      toast.info("Cancelled previous request", {
-        id: "feed-cancel",
-        description: `Switched to ${kind === "all" ? "All" : kind} · ${sort}`,
-        duration: 1800,
-      });
+      cancelCountRef.current += 1;
+      lastCancelAtRef.current = Date.now();
     }
+    toast.dismiss("feed-loading");
 
     // Persist outgoing key's snapshot.
     feedCache.set(keyRef.current, { items, cursor, scrollY: window.scrollY });
@@ -421,12 +421,31 @@ function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
       setCursor(0);
       setError(null);
       attemptRef.current = 1;
-      toast.loading(`Loading ${kind === "all" ? "All" : kind} · ${sort}…`, { id: "feed-loading" });
       requestAnimationFrame(() => {
         sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
         restoredRef.current = true;
       });
     }
+
+    // Trailing flush: only after the user stops clicking for ~320ms do we
+    // surface one toast describing the final destination.
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => {
+      toastTimerRef.current = null;
+      const finalKey = keyRef.current;
+      const [fKind, fSort] = finalKey.split("|");
+      const label = `${fKind === "all" ? "All" : fKind} · ${fSort}`;
+      const n = cancelCountRef.current;
+      cancelCountRef.current = 0;
+      if (n > 1) {
+        toast.info(`Cancelled ${n} pending requests`, { id: "feed-cancel", description: label, duration: 1600 });
+      } else if (n === 1) {
+        toast.info("Cancelled previous request", { id: "feed-cancel", description: label, duration: 1600 });
+      }
+      if (!feedCache.get(finalKey)?.items.length) {
+        toast.loading(`Loading ${label}…`, { id: "feed-loading" });
+      }
+    }, 320);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
