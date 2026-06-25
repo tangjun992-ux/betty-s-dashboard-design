@@ -362,6 +362,10 @@ function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
   // Race protection: only the latest request id may write state.
   const reqIdRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
+  // Toast coalescing: a single trailing flush summarizes rapid filter/sort clicks.
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelCountRef = useRef(0);
+  const lastCancelAtRef = useRef(0);
 
   // Save scroll position continuously for the *current* key.
   useEffect(() => {
@@ -388,14 +392,14 @@ function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
     abortRef.current = null;
     reqIdRef.current += 1;
     setLoading(false);
-    toast.dismiss("feed-loading");
+
+    // Coalesce cancellations: count them, but defer the toast so a flurry of
+    // clicks resolves to one summary instead of N stacked toasts.
     if (hadInFlight) {
-      toast.info("Cancelled previous request", {
-        id: "feed-cancel",
-        description: `Switched to ${kind === "all" ? "All" : kind} · ${sort}`,
-        duration: 1800,
-      });
+      cancelCountRef.current += 1;
+      lastCancelAtRef.current = Date.now();
     }
+    toast.dismiss("feed-loading");
 
     // Persist outgoing key's snapshot.
     feedCache.set(keyRef.current, { items, cursor, scrollY: window.scrollY });
@@ -417,12 +421,31 @@ function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
       setCursor(0);
       setError(null);
       attemptRef.current = 1;
-      toast.loading(`Loading ${kind === "all" ? "All" : kind} · ${sort}…`, { id: "feed-loading" });
       requestAnimationFrame(() => {
         sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
         restoredRef.current = true;
       });
     }
+
+    // Trailing flush: only after the user stops clicking for ~320ms do we
+    // surface one toast describing the final destination.
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => {
+      toastTimerRef.current = null;
+      const finalKey = keyRef.current;
+      const [fKind, fSort] = finalKey.split("|");
+      const label = `${fKind === "all" ? "All" : fKind} · ${fSort}`;
+      const n = cancelCountRef.current;
+      cancelCountRef.current = 0;
+      if (n > 1) {
+        toast.info(`Cancelled ${n} pending requests`, { id: "feed-cancel", description: label, duration: 1600 });
+      } else if (n === 1) {
+        toast.info("Cancelled previous request", { id: "feed-cancel", description: label, duration: 1600 });
+      }
+      if (!feedCache.get(finalKey)?.items.length) {
+        toast.loading(`Loading ${label}…`, { id: "feed-loading" });
+      }
+    }, 320);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
@@ -450,14 +473,23 @@ function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
     setLoading(true);
     setError(null);
     const isFirstPage = myCursor === 0;
+    // Defer "Loading more…" until the request actually feels slow (>450ms).
+    // Short fetches resolve before the toast appears — no flicker.
+    let slowTimer: ReturnType<typeof setTimeout> | null = null;
     if (!isFirstPage) {
-      toast.loading("Loading more…", { id: "feed-loading" });
+      slowTimer = setTimeout(() => {
+        if (myId === reqIdRef.current && myKey === keyRef.current) {
+          toast.loading("Loading more…", { id: "feed-loading" });
+        }
+      }, 450);
     }
+    const clearSlow = () => { if (slowTimer) { clearTimeout(slowTimer); slowTimer = null; } };
     try {
       const page = await fetchPage({
         cursor: myCursor, limit: 18, kind, seed: 13,
         attempt: attemptRef.current, signal: controller.signal,
       });
+      clearSlow();
       // Drop stale results: the key changed or a newer request was started.
       if (myId !== reqIdRef.current || myKey !== keyRef.current) return;
       attemptRef.current = 1;
@@ -468,6 +500,7 @@ function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
         toast.success("You've reached the end", { id: "feed-end", duration: 1600 });
       }
     } catch (e) {
+      clearSlow();
       if ((e as DOMException)?.name === "AbortError") {
         toast.dismiss("feed-loading");
         return;
