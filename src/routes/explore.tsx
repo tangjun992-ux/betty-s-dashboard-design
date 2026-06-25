@@ -151,9 +151,9 @@ function ExplorePage() {
   const sort = (search.sort as Sort) ?? "Trending";
 
   const setFilter = (f: Filter) =>
-    navigate({ search: (s) => ({ ...s, filter: f === "All" ? undefined : f }), replace: true });
+    navigate({ search: (s: SearchParams) => ({ ...s, filter: f === "All" ? undefined : f }), replace: true });
   const setSort = (s: Sort) =>
-    navigate({ search: (prev) => ({ ...prev, sort: s === "Trending" ? undefined : s }), replace: true });
+    navigate({ search: (prev: SearchParams) => ({ ...prev, sort: s === "Trending" ? undefined : s }), replace: true });
 
   const [active, setActive] = useState<Card | null>(null);
 
