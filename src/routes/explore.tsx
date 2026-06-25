@@ -41,32 +41,58 @@ const ratios = ["3/4", "2/3", "4/5", "1/1", "9/16", "3/4", "4/5"];
 const allModels = ["GPT Image 2", "Seedance 2.0", "Kling 3.0", "Veo 3.1", "Flux 1.1", "Nano Banana"];
 
 // Cursor-based fake fetcher — mimics Yapper's `?cursor=…&limit=…` API shape.
+// Fails ~12% of the time on attempt #1 so we can demo the retry UI.
 function fetchPage(opts: {
   cursor: number;
   limit: number;
   kind?: Kind | "all";
   model?: string;
   seed?: number;
+  attempt?: number;
 }): Promise<{ items: Card[]; nextCursor: number | null }> {
-  const { cursor, limit, kind = "all", model, seed = 0 } = opts;
-  const items: Card[] = Array.from({ length: limit }, (_, i) => {
-    const idx = cursor + i + seed;
-    const k: Kind = kind === "all" ? (idx % 3 === 0 ? "video" : "image") : kind;
-    const m = model ?? allModels[idx % allModels.length];
-    return {
-      id: `${m}-${idx}`,
-      src: pool[idx % pool.length],
-      ratio: ratios[idx % ratios.length],
-      kind: k,
-      model: m,
-      duration: k === "video" ? `0:${String(5 + ((idx * 7) % 50)).padStart(2, "0")}` : undefined,
-      likes: 120 + ((idx * 37 + seed * 11) % 4000),
-    };
-  });
-  const next = cursor + limit;
-  // Cap so we eventually stop (mimic exhausted feed after ~120 items).
-  const nextCursor = next >= 120 ? null : next;
-  return new Promise((res) => setTimeout(() => res({ items, nextCursor }), 280));
+  const { cursor, limit, kind = "all", model, seed = 0, attempt = 1 } = opts;
+  return new Promise((res, rej) => setTimeout(() => {
+    if (attempt === 1 && cursor > 0 && Math.random() < 0.12) {
+      rej(new Error("Network error while loading more"));
+      return;
+    }
+    const items: Card[] = Array.from({ length: limit }, (_, i) => {
+      const idx = cursor + i + seed;
+      const k: Kind = kind === "all" ? (idx % 3 === 0 ? "video" : "image") : kind;
+      const m = model ?? allModels[idx % allModels.length];
+      return {
+        id: `${m}-${idx}`,
+        src: pool[idx % pool.length],
+        ratio: ratios[idx % ratios.length],
+        kind: k,
+        model: m,
+        duration: k === "video" ? `0:${String(5 + ((idx * 7) % 50)).padStart(2, "0")}` : undefined,
+        likes: 120 + ((idx * 37 + seed * 11) % 4000),
+      };
+    });
+    const next = cursor + limit;
+    const nextCursor = next >= 120 ? null : next;
+    res({ items, nextCursor });
+  }, 480));
+}
+
+function SkeletonCard({ ratio, full = false }: { ratio: string; full?: boolean }) {
+  return (
+    <div
+      className={full ? "" : "snap-start shrink-0"}
+      style={full ? undefined : { width: "min(260px, 60vw)" }}
+    >
+      <div
+        className="relative rounded-xl overflow-hidden bg-surface animate-pulse"
+        style={{ aspectRatio: ratio }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-white/[0.07] to-white/[0.02]" />
+        <div className="absolute top-2 left-2 h-4 w-16 rounded bg-white/10" />
+        <div className="absolute bottom-2 left-2 h-3 w-10 rounded bg-white/10" />
+        <div className="absolute bottom-2 right-2 h-3 w-12 rounded bg-white/10" />
+      </div>
+    </div>
+  );
 }
 
 const filters = ["All", "Videos", "Images", "Avatars", "Audio"] as const;
