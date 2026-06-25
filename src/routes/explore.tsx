@@ -399,14 +399,67 @@ function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
 
 function ExploreCard({ card, full = false }: { card: Card; full?: boolean }) {
   const [liked, setLiked] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [errored, setErrored] = useState(false);
+  const [imgKey, setImgKey] = useState(0);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+
+  // Catch "complete-before-onload" cache hits.
+  useEffect(() => {
+    const el = imgRef.current;
+    if (el && el.complete && el.naturalWidth > 0) setLoaded(true);
+  }, [imgKey]);
+
+  const retryImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setErrored(false);
+    setLoaded(false);
+    setImgKey((k) => k + 1);
+  };
+
   return (
     <div
       className={`group cursor-pointer ${full ? "" : "snap-start shrink-0"}`}
       style={full ? undefined : { width: "min(260px, 60vw)" }}
     >
       <div className="relative rounded-xl overflow-hidden bg-surface" style={{ aspectRatio: card.ratio }}>
-        <img src={card.src} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/0 to-black/0 opacity-90" />
+        {/* Skeleton shimmer until the image fires onLoad */}
+        {!loaded && !errored && (
+          <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-white/[0.04] via-white/[0.08] to-white/[0.02]" />
+        )}
+
+        {!errored && (
+          <img
+            ref={imgRef}
+            key={imgKey}
+            src={`${card.src}${imgKey ? `?r=${imgKey}` : ""}`}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            onLoad={() => setLoaded(true)}
+            onError={() => setErrored(true)}
+            className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-105 ${
+              loaded ? "opacity-100" : "opacity-0"
+            }`}
+          />
+        )}
+
+        {errored && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-surface text-muted-foreground">
+            <ImageOff className="size-5" />
+            <p className="text-[11px]">Couldn't load</p>
+            <button
+              onClick={retryImage}
+              className="inline-flex items-center gap-1 h-6 px-2.5 rounded-md bg-surface-hover text-[10.5px] font-medium hover:bg-white/10"
+            >
+              <RefreshCw className="size-3" /> Retry
+            </button>
+          </div>
+        )}
+
+        {loaded && !errored && (
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/0 to-black/0 opacity-90 pointer-events-none" />
+        )}
 
         <div className="absolute top-2 left-2 flex items-center gap-1.5">
           <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-black/55 backdrop-blur text-white/90">
@@ -421,21 +474,25 @@ function ExploreCard({ card, full = false }: { card: Card; full?: boolean }) {
           <Heart className={`size-3.5 ${liked ? "fill-rose-500 text-rose-500" : ""}`} />
         </button>
 
-        {card.duration && (
+        {card.duration && loaded && (
           <span className="absolute bottom-2 left-2 text-[11px] font-medium text-white/90">{card.duration}</span>
         )}
-        <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 text-[11px] text-white/85">
-          <Heart className="size-3" /> {card.likes.toLocaleString()}
-        </span>
+        {loaded && (
+          <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 text-[11px] text-white/85">
+            <Heart className="size-3" /> {card.likes.toLocaleString()}
+          </span>
+        )}
 
-        <div className="absolute inset-x-2 bottom-2 flex gap-1.5 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200">
-          <button className="flex-1 h-7 rounded-md bg-white/95 text-[11px] font-semibold text-background inline-flex items-center justify-center gap-1 hover:bg-white">
-            <RotateCcw className="size-3" /> Recreate
-          </button>
-          <button className="flex-1 h-7 rounded-md bg-white/10 backdrop-blur text-white text-[11px] font-medium inline-flex items-center justify-center gap-1 hover:bg-white/20">
-            <Repeat2 className="size-3" /> Reuse
-          </button>
-        </div>
+        {loaded && !errored && (
+          <div className="absolute inset-x-2 bottom-2 flex gap-1.5 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200">
+            <button className="flex-1 h-7 rounded-md bg-white/95 text-[11px] font-semibold text-background inline-flex items-center justify-center gap-1 hover:bg-white">
+              <RotateCcw className="size-3" /> Recreate
+            </button>
+            <button className="flex-1 h-7 rounded-md bg-white/10 backdrop-blur text-white text-[11px] font-medium inline-flex items-center justify-center gap-1 hover:bg-white/20">
+              <Repeat2 className="size-3" /> Reuse
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
