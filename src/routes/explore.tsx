@@ -50,31 +50,54 @@ function fetchPage(opts: {
   model?: string;
   seed?: number;
   attempt?: number;
+  signal?: AbortSignal;
 }): Promise<{ items: Card[]; nextCursor: number | null }> {
-  const { cursor, limit, kind = "all", model, seed = 0, attempt = 1 } = opts;
-  return new Promise((res, rej) => setTimeout(() => {
-    if (attempt === 1 && cursor > 0 && Math.random() < 0.12) {
-      rej(new Error("Network error while loading more"));
+  const { cursor, limit, kind = "all", model, seed = 0, attempt = 1, signal } = opts;
+  return new Promise((res, rej) => {
+    if (signal?.aborted) {
+      rej(new DOMException("Aborted", "AbortError"));
       return;
     }
-    const items: Card[] = Array.from({ length: limit }, (_, i) => {
-      const idx = cursor + i + seed;
-      const k: Kind = kind === "all" ? (idx % 3 === 0 ? "video" : "image") : kind;
-      const m = model ?? allModels[idx % allModels.length];
-      return {
-        id: `${m}-${idx}`,
-        src: pool[idx % pool.length],
-        ratio: ratios[idx % ratios.length],
-        kind: k,
-        model: m,
-        duration: k === "video" ? `0:${String(5 + ((idx * 7) % 50)).padStart(2, "0")}` : undefined,
-        likes: 120 + ((idx * 37 + seed * 11) % 4000),
-      };
-    });
-    const next = cursor + limit;
-    const nextCursor = next >= 120 ? null : next;
-    res({ items, nextCursor });
-  }, 480));
+    const t = setTimeout(() => {
+      signal?.removeEventListener("abort", onAbort);
+      if (attempt === 1 && cursor > 0 && Math.random() < 0.12) {
+        rej(new Error("Network error while loading more"));
+        return;
+      }
+      const items: Card[] = Array.from({ length: limit }, (_, i) => {
+        const idx = cursor + i + seed;
+        const k: Kind = kind === "all" ? (idx % 3 === 0 ? "video" : "image") : kind;
+        const m = model ?? allModels[idx % allModels.length];
+        return {
+          id: `${m}-${idx}`,
+          src: pool[idx % pool.length],
+          ratio: ratios[idx % ratios.length],
+          kind: k,
+          model: m,
+          duration: k === "video" ? `0:${String(5 + ((idx * 7) % 50)).padStart(2, "0")}` : undefined,
+          likes: 120 + ((idx * 37 + seed * 11) % 4000),
+        };
+      });
+      const next = cursor + limit;
+      const nextCursor = next >= 120 ? null : next;
+      res({ items, nextCursor });
+    }, 480);
+    const onAbort = () => {
+      clearTimeout(t);
+      rej(new DOMException("Aborted", "AbortError"));
+    };
+    signal?.addEventListener("abort", onAbort, { once: true });
+  });
+}
+
+// Debounce a rapidly-changing value (e.g. filter/sort while the user is clicking around).
+function useDebounced<T>(value: T, delay = 180): T {
+  const [v, setV] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setV(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return v;
 }
 
 function SkeletonCard({ ratio, full = false }: { ratio: string; full?: boolean }) {
@@ -119,6 +142,10 @@ function ExplorePage() {
 
   const feedKind: Kind | "all" =
     filter === "Videos" ? "video" : filter === "Images" ? "image" : "all";
+
+  // Debounce filter/sort so rapid clicks don't kick off a stampede of fetches.
+  const debouncedKind = useDebounced(feedKind, 180);
+  const debouncedSort = useDebounced(sort, 180);
 
   return (
     <AppShell>
@@ -187,7 +214,7 @@ function ExplorePage() {
         ))}
 
         {/* Infinite waterfall feed */}
-        <WaterfallFeed kind={feedKind} sort={sort} />
+        <WaterfallFeed kind={debouncedKind} sort={debouncedSort} />
       </div>
     </AppShell>
   );
@@ -326,6 +353,9 @@ function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
   const attemptRef = useRef(1);
   const keyRef = useRef(key);
   const restoredRef = useRef(false);
+  // Race protection: only the latest request id may write state.
+  const reqIdRef = useRef(0);
+  const abortRef = useRef<AbortController | null>(null);
 
   // Save scroll position continuously for the *current* key.
   useEffect(() => {
@@ -337,14 +367,21 @@ function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Snapshot current state before unmount so a remount can rehydrate.
+  // Snapshot current state before unmount and abort any in-flight request.
   useEffect(() => () => {
     feedCache.set(keyRef.current, { items, cursor, scrollY: window.scrollY });
+    abortRef.current?.abort();
   }, [items, cursor]);
 
   // Handle filter/sort changes within the mounted component.
   useEffect(() => {
     if (keyRef.current === key) return;
+    // Cancel any in-flight fetch from the previous key — its result must not land.
+    abortRef.current?.abort();
+    abortRef.current = null;
+    reqIdRef.current += 1;
+    setLoading(false);
+
     // Persist outgoing key's snapshot.
     feedCache.set(keyRef.current, { items, cursor, scrollY: window.scrollY });
     keyRef.current = key;
@@ -352,7 +389,6 @@ function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
 
     const next = feedCache.get(key);
     if (next) {
-      // Rehydrate from cache and restore prior scroll on next frame.
       setItems(next.items);
       setCursor(next.cursor);
       setError(null);
@@ -362,7 +398,6 @@ function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
         restoredRef.current = true;
       });
     } else {
-      // Fresh key: reset cursor and scroll the feed header into view (Yapper's behavior).
       setItems([]);
       setCursor(0);
       setError(null);
@@ -388,18 +423,33 @@ function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
 
   const loadMore = useCallback(async () => {
     if (loading || cursor === null) return;
+    // Cancel any prior in-flight request and claim a new id.
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const myId = ++reqIdRef.current;
+    const myKey = keyRef.current;
+    const myCursor = cursor;
+
     setLoading(true);
     setError(null);
     try {
-      const page = await fetchPage({ cursor, limit: 18, kind, seed: 13, attempt: attemptRef.current });
+      const page = await fetchPage({
+        cursor: myCursor, limit: 18, kind, seed: 13,
+        attempt: attemptRef.current, signal: controller.signal,
+      });
+      // Drop stale results: the key changed or a newer request was started.
+      if (myId !== reqIdRef.current || myKey !== keyRef.current) return;
       attemptRef.current = 1;
       setItems((prev) => [...prev, ...page.items]);
       setCursor(page.nextCursor);
     } catch (e) {
+      if ((e as DOMException)?.name === "AbortError") return;
+      if (myId !== reqIdRef.current || myKey !== keyRef.current) return;
       attemptRef.current += 1;
       setError(e instanceof Error ? e.message : "Failed to load");
     } finally {
-      setLoading(false);
+      if (myId === reqIdRef.current) setLoading(false);
     }
   }, [loading, cursor, kind]);
 
