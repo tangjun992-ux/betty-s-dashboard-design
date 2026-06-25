@@ -473,14 +473,23 @@ function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
     setLoading(true);
     setError(null);
     const isFirstPage = myCursor === 0;
+    // Defer "Loading more…" until the request actually feels slow (>450ms).
+    // Short fetches resolve before the toast appears — no flicker.
+    let slowTimer: ReturnType<typeof setTimeout> | null = null;
     if (!isFirstPage) {
-      toast.loading("Loading more…", { id: "feed-loading" });
+      slowTimer = setTimeout(() => {
+        if (myId === reqIdRef.current && myKey === keyRef.current) {
+          toast.loading("Loading more…", { id: "feed-loading" });
+        }
+      }, 450);
     }
+    const clearSlow = () => { if (slowTimer) { clearTimeout(slowTimer); slowTimer = null; } };
     try {
       const page = await fetchPage({
         cursor: myCursor, limit: 18, kind, seed: 13,
         attempt: attemptRef.current, signal: controller.signal,
       });
+      clearSlow();
       // Drop stale results: the key changed or a newer request was started.
       if (myId !== reqIdRef.current || myKey !== keyRef.current) return;
       attemptRef.current = 1;
@@ -491,6 +500,7 @@ function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
         toast.success("You've reached the end", { id: "feed-end", duration: 1600 });
       }
     } catch (e) {
+      clearSlow();
       if ((e as DOMException)?.name === "AbortError") {
         toast.dismiss("feed-loading");
         return;
