@@ -18,6 +18,15 @@ import { Route as EarnRouteImport } from './routes/earn'
 import { Route as CreateRouteImport } from './routes/create'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CreateVideoRouteImport } from './routes/create.video'
+import { Route as CreateUpscaleRouteImport } from './routes/create.upscale'
+import { Route as CreateMotionRouteImport } from './routes/create.motion'
+import { Route as CreateLipsyncRouteImport } from './routes/create.lipsync'
+import { Route as CreateImageRouteImport } from './routes/create.image'
+import { Route as CreateExtractRouteImport } from './routes/create.extract'
+import { Route as CreateAvatarRouteImport } from './routes/create.avatar'
+import { Route as CreateAudioRouteImport } from './routes/create.audio'
+import { Route as CreateAgentRouteImport } from './routes/create.agent'
 
 const ToolsRoute = ToolsRouteImport.update({
   id: '/tools',
@@ -64,40 +73,112 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CreateVideoRoute = CreateVideoRouteImport.update({
+  id: '/video',
+  path: '/video',
+  getParentRoute: () => CreateRoute,
+} as any)
+const CreateUpscaleRoute = CreateUpscaleRouteImport.update({
+  id: '/upscale',
+  path: '/upscale',
+  getParentRoute: () => CreateRoute,
+} as any)
+const CreateMotionRoute = CreateMotionRouteImport.update({
+  id: '/motion',
+  path: '/motion',
+  getParentRoute: () => CreateRoute,
+} as any)
+const CreateLipsyncRoute = CreateLipsyncRouteImport.update({
+  id: '/lipsync',
+  path: '/lipsync',
+  getParentRoute: () => CreateRoute,
+} as any)
+const CreateImageRoute = CreateImageRouteImport.update({
+  id: '/image',
+  path: '/image',
+  getParentRoute: () => CreateRoute,
+} as any)
+const CreateExtractRoute = CreateExtractRouteImport.update({
+  id: '/extract',
+  path: '/extract',
+  getParentRoute: () => CreateRoute,
+} as any)
+const CreateAvatarRoute = CreateAvatarRouteImport.update({
+  id: '/avatar',
+  path: '/avatar',
+  getParentRoute: () => CreateRoute,
+} as any)
+const CreateAudioRoute = CreateAudioRouteImport.update({
+  id: '/audio',
+  path: '/audio',
+  getParentRoute: () => CreateRoute,
+} as any)
+const CreateAgentRoute = CreateAgentRouteImport.update({
+  id: '/agent',
+  path: '/agent',
+  getParentRoute: () => CreateRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/create': typeof CreateRoute
+  '/create': typeof CreateRouteWithChildren
   '/earn': typeof EarnRoute
   '/explore': typeof ExploreRoute
   '/library': typeof LibraryRoute
   '/sessions': typeof SessionsRoute
   '/settings': typeof SettingsRoute
   '/tools': typeof ToolsRoute
+  '/create/agent': typeof CreateAgentRoute
+  '/create/audio': typeof CreateAudioRoute
+  '/create/avatar': typeof CreateAvatarRoute
+  '/create/extract': typeof CreateExtractRoute
+  '/create/image': typeof CreateImageRoute
+  '/create/lipsync': typeof CreateLipsyncRoute
+  '/create/motion': typeof CreateMotionRoute
+  '/create/upscale': typeof CreateUpscaleRoute
+  '/create/video': typeof CreateVideoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/create': typeof CreateRoute
+  '/create': typeof CreateRouteWithChildren
   '/earn': typeof EarnRoute
   '/explore': typeof ExploreRoute
   '/library': typeof LibraryRoute
   '/sessions': typeof SessionsRoute
   '/settings': typeof SettingsRoute
   '/tools': typeof ToolsRoute
+  '/create/agent': typeof CreateAgentRoute
+  '/create/audio': typeof CreateAudioRoute
+  '/create/avatar': typeof CreateAvatarRoute
+  '/create/extract': typeof CreateExtractRoute
+  '/create/image': typeof CreateImageRoute
+  '/create/lipsync': typeof CreateLipsyncRoute
+  '/create/motion': typeof CreateMotionRoute
+  '/create/upscale': typeof CreateUpscaleRoute
+  '/create/video': typeof CreateVideoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/create': typeof CreateRoute
+  '/create': typeof CreateRouteWithChildren
   '/earn': typeof EarnRoute
   '/explore': typeof ExploreRoute
   '/library': typeof LibraryRoute
   '/sessions': typeof SessionsRoute
   '/settings': typeof SettingsRoute
   '/tools': typeof ToolsRoute
+  '/create/agent': typeof CreateAgentRoute
+  '/create/audio': typeof CreateAudioRoute
+  '/create/avatar': typeof CreateAvatarRoute
+  '/create/extract': typeof CreateExtractRoute
+  '/create/image': typeof CreateImageRoute
+  '/create/lipsync': typeof CreateLipsyncRoute
+  '/create/motion': typeof CreateMotionRoute
+  '/create/upscale': typeof CreateUpscaleRoute
+  '/create/video': typeof CreateVideoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -111,6 +192,15 @@ export interface FileRouteTypes {
     | '/sessions'
     | '/settings'
     | '/tools'
+    | '/create/agent'
+    | '/create/audio'
+    | '/create/avatar'
+    | '/create/extract'
+    | '/create/image'
+    | '/create/lipsync'
+    | '/create/motion'
+    | '/create/upscale'
+    | '/create/video'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -122,6 +212,15 @@ export interface FileRouteTypes {
     | '/sessions'
     | '/settings'
     | '/tools'
+    | '/create/agent'
+    | '/create/audio'
+    | '/create/avatar'
+    | '/create/extract'
+    | '/create/image'
+    | '/create/lipsync'
+    | '/create/motion'
+    | '/create/upscale'
+    | '/create/video'
   id:
     | '__root__'
     | '/'
@@ -133,12 +232,21 @@ export interface FileRouteTypes {
     | '/sessions'
     | '/settings'
     | '/tools'
+    | '/create/agent'
+    | '/create/audio'
+    | '/create/avatar'
+    | '/create/extract'
+    | '/create/image'
+    | '/create/lipsync'
+    | '/create/motion'
+    | '/create/upscale'
+    | '/create/video'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
-  CreateRoute: typeof CreateRoute
+  CreateRoute: typeof CreateRouteWithChildren
   EarnRoute: typeof EarnRoute
   ExploreRoute: typeof ExploreRoute
   LibraryRoute: typeof LibraryRoute
@@ -212,13 +320,103 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/create/video': {
+      id: '/create/video'
+      path: '/video'
+      fullPath: '/create/video'
+      preLoaderRoute: typeof CreateVideoRouteImport
+      parentRoute: typeof CreateRoute
+    }
+    '/create/upscale': {
+      id: '/create/upscale'
+      path: '/upscale'
+      fullPath: '/create/upscale'
+      preLoaderRoute: typeof CreateUpscaleRouteImport
+      parentRoute: typeof CreateRoute
+    }
+    '/create/motion': {
+      id: '/create/motion'
+      path: '/motion'
+      fullPath: '/create/motion'
+      preLoaderRoute: typeof CreateMotionRouteImport
+      parentRoute: typeof CreateRoute
+    }
+    '/create/lipsync': {
+      id: '/create/lipsync'
+      path: '/lipsync'
+      fullPath: '/create/lipsync'
+      preLoaderRoute: typeof CreateLipsyncRouteImport
+      parentRoute: typeof CreateRoute
+    }
+    '/create/image': {
+      id: '/create/image'
+      path: '/image'
+      fullPath: '/create/image'
+      preLoaderRoute: typeof CreateImageRouteImport
+      parentRoute: typeof CreateRoute
+    }
+    '/create/extract': {
+      id: '/create/extract'
+      path: '/extract'
+      fullPath: '/create/extract'
+      preLoaderRoute: typeof CreateExtractRouteImport
+      parentRoute: typeof CreateRoute
+    }
+    '/create/avatar': {
+      id: '/create/avatar'
+      path: '/avatar'
+      fullPath: '/create/avatar'
+      preLoaderRoute: typeof CreateAvatarRouteImport
+      parentRoute: typeof CreateRoute
+    }
+    '/create/audio': {
+      id: '/create/audio'
+      path: '/audio'
+      fullPath: '/create/audio'
+      preLoaderRoute: typeof CreateAudioRouteImport
+      parentRoute: typeof CreateRoute
+    }
+    '/create/agent': {
+      id: '/create/agent'
+      path: '/agent'
+      fullPath: '/create/agent'
+      preLoaderRoute: typeof CreateAgentRouteImport
+      parentRoute: typeof CreateRoute
+    }
   }
 }
+
+interface CreateRouteChildren {
+  CreateAgentRoute: typeof CreateAgentRoute
+  CreateAudioRoute: typeof CreateAudioRoute
+  CreateAvatarRoute: typeof CreateAvatarRoute
+  CreateExtractRoute: typeof CreateExtractRoute
+  CreateImageRoute: typeof CreateImageRoute
+  CreateLipsyncRoute: typeof CreateLipsyncRoute
+  CreateMotionRoute: typeof CreateMotionRoute
+  CreateUpscaleRoute: typeof CreateUpscaleRoute
+  CreateVideoRoute: typeof CreateVideoRoute
+}
+
+const CreateRouteChildren: CreateRouteChildren = {
+  CreateAgentRoute: CreateAgentRoute,
+  CreateAudioRoute: CreateAudioRoute,
+  CreateAvatarRoute: CreateAvatarRoute,
+  CreateExtractRoute: CreateExtractRoute,
+  CreateImageRoute: CreateImageRoute,
+  CreateLipsyncRoute: CreateLipsyncRoute,
+  CreateMotionRoute: CreateMotionRoute,
+  CreateUpscaleRoute: CreateUpscaleRoute,
+  CreateVideoRoute: CreateVideoRoute,
+}
+
+const CreateRouteWithChildren =
+  CreateRoute._addFileChildren(CreateRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
-  CreateRoute: CreateRoute,
+  CreateRoute: CreateRouteWithChildren,
   EarnRoute: EarnRoute,
   ExploreRoute: ExploreRoute,
   LibraryRoute: LibraryRoute,
