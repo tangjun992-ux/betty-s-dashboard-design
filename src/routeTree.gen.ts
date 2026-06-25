@@ -10,9 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ToolsRouteImport } from './routes/tools'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SessionsRouteImport } from './routes/sessions'
 import { Route as LibraryRouteImport } from './routes/library'
+import { Route as FeedRouteImport } from './routes/feed'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as EarnRouteImport } from './routes/earn'
 import { Route as CreateRouteImport } from './routes/create'
@@ -33,6 +35,11 @@ const ToolsRoute = ToolsRouteImport.update({
   path: '/tools',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -46,6 +53,11 @@ const SessionsRoute = SessionsRouteImport.update({
 const LibraryRoute = LibraryRouteImport.update({
   id: '/library',
   path: '/library',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedRoute = FeedRouteImport.update({
+  id: '/feed',
+  path: '/feed',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ExploreRoute = ExploreRouteImport.update({
@@ -125,9 +137,11 @@ export interface FileRoutesByFullPath {
   '/create': typeof CreateRouteWithChildren
   '/earn': typeof EarnRoute
   '/explore': typeof ExploreRoute
+  '/feed': typeof FeedRoute
   '/library': typeof LibraryRoute
   '/sessions': typeof SessionsRoute
   '/settings': typeof SettingsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/tools': typeof ToolsRoute
   '/create/agent': typeof CreateAgentRoute
   '/create/audio': typeof CreateAudioRoute
@@ -145,9 +159,11 @@ export interface FileRoutesByTo {
   '/create': typeof CreateRouteWithChildren
   '/earn': typeof EarnRoute
   '/explore': typeof ExploreRoute
+  '/feed': typeof FeedRoute
   '/library': typeof LibraryRoute
   '/sessions': typeof SessionsRoute
   '/settings': typeof SettingsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/tools': typeof ToolsRoute
   '/create/agent': typeof CreateAgentRoute
   '/create/audio': typeof CreateAudioRoute
@@ -166,9 +182,11 @@ export interface FileRoutesById {
   '/create': typeof CreateRouteWithChildren
   '/earn': typeof EarnRoute
   '/explore': typeof ExploreRoute
+  '/feed': typeof FeedRoute
   '/library': typeof LibraryRoute
   '/sessions': typeof SessionsRoute
   '/settings': typeof SettingsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/tools': typeof ToolsRoute
   '/create/agent': typeof CreateAgentRoute
   '/create/audio': typeof CreateAudioRoute
@@ -188,9 +206,11 @@ export interface FileRouteTypes {
     | '/create'
     | '/earn'
     | '/explore'
+    | '/feed'
     | '/library'
     | '/sessions'
     | '/settings'
+    | '/sitemap.xml'
     | '/tools'
     | '/create/agent'
     | '/create/audio'
@@ -208,9 +228,11 @@ export interface FileRouteTypes {
     | '/create'
     | '/earn'
     | '/explore'
+    | '/feed'
     | '/library'
     | '/sessions'
     | '/settings'
+    | '/sitemap.xml'
     | '/tools'
     | '/create/agent'
     | '/create/audio'
@@ -228,9 +250,11 @@ export interface FileRouteTypes {
     | '/create'
     | '/earn'
     | '/explore'
+    | '/feed'
     | '/library'
     | '/sessions'
     | '/settings'
+    | '/sitemap.xml'
     | '/tools'
     | '/create/agent'
     | '/create/audio'
@@ -249,9 +273,11 @@ export interface RootRouteChildren {
   CreateRoute: typeof CreateRouteWithChildren
   EarnRoute: typeof EarnRoute
   ExploreRoute: typeof ExploreRoute
+  FeedRoute: typeof FeedRoute
   LibraryRoute: typeof LibraryRoute
   SessionsRoute: typeof SessionsRoute
   SettingsRoute: typeof SettingsRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ToolsRoute: typeof ToolsRoute
 }
 
@@ -262,6 +288,13 @@ declare module '@tanstack/react-router' {
       path: '/tools'
       fullPath: '/tools'
       preLoaderRoute: typeof ToolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -283,6 +316,13 @@ declare module '@tanstack/react-router' {
       path: '/library'
       fullPath: '/library'
       preLoaderRoute: typeof LibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feed': {
+      id: '/feed'
+      path: '/feed'
+      fullPath: '/feed'
+      preLoaderRoute: typeof FeedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/explore': {
@@ -419,9 +459,11 @@ const rootRouteChildren: RootRouteChildren = {
   CreateRoute: CreateRouteWithChildren,
   EarnRoute: EarnRoute,
   ExploreRoute: ExploreRoute,
+  FeedRoute: FeedRoute,
   LibraryRoute: LibraryRoute,
   SessionsRoute: SessionsRoute,
   SettingsRoute: SettingsRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   ToolsRoute: ToolsRoute,
 }
 export const routeTree = rootRouteImport

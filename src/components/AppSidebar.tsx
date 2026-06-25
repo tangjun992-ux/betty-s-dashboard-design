@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Home, Compass, FolderOpen, Sparkles, Image as ImageIcon, Video, Mic2,
   Activity, AudioLines, Maximize2, ScanLine, ChevronDown, Plus, Search,
-  PanelLeft, HelpCircle, MessageCircle, Languages, Gift, Wrench,
+  PanelLeft, HelpCircle, MessageCircle, Languages, Gift, Wrench, Heart,
 } from "lucide-react";
 import { useState } from "react";
 import { useSidebarState } from "@/components/sidebar-state";
@@ -11,6 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 const mainNav = [
   { to: "/", icon: Home, label: "Home" },
   { to: "/explore", icon: Compass, label: "Explore" },
+  { to: "/feed", icon: Heart, label: "Feed" },
   { to: "/library", icon: FolderOpen, label: "My Library" },
 ] as const;
 

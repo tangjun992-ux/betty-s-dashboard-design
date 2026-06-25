@@ -64,7 +64,6 @@ export const toggleLike = createServerFn({ method: "POST" })
       .maybeSingle();
     if (existing) {
       await supabase.from("likes").delete().eq("user_id", userId).eq("generation_id", data.generationId);
-      await supabase.rpc as unknown; // noop placeholder; we manually decrement
       const { data: gen } = await supabase.from("generations").select("like_count").eq("id", data.generationId).maybeSingle();
       if (gen) await supabase.from("generations").update({ like_count: Math.max(0, (gen.like_count ?? 0) - 1) }).eq("id", data.generationId);
       return { liked: false };
