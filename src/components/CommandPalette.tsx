@@ -14,15 +14,15 @@ import {
   Activity, AudioLines, Maximize2, ScanLine, Settings, Gift, Wrench, PlayCircle,
 } from "lucide-react";
 
-const navItems = [
+const navItems: { to: string; label: string; icon: typeof Home; hint?: string }[] = [
   { to: "/", label: "Home", icon: Home, hint: "G H" },
   { to: "/explore", label: "Explore", icon: Compass, hint: "G E" },
   { to: "/library", label: "My Library", icon: FolderOpen, hint: "G L" },
   { to: "/sessions", label: "Sessions", icon: PlayCircle },
   { to: "/tools", label: "All Tools", icon: Wrench },
   { to: "/earn", label: "Earn", icon: Gift },
-  { to: "/settings", label: "Settings", icon: Settings },
-] as const;
+  { to: "/settings", label: "Settings", icon: Settings, hint: "G S" },
+];
 
 const toolItems = [
   { to: "/create/agent", label: "Agent", icon: Sparkles },
