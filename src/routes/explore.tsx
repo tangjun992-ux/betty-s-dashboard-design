@@ -305,21 +305,86 @@ function ModelRow({ section }: { section: (typeof featuredModels)[number] }) {
   );
 }
 
+type FeedSnapshot = {
+  items: Card[];
+  cursor: number | null;
+  scrollY: number;
+};
+const feedCache = new Map<string, FeedSnapshot>();
+let lastFeedKey: string | null = null;
+
 function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
-  const [items, setItems] = useState<Card[]>([]);
-  const [cursor, setCursor] = useState<number | null>(0);
+  const key = `${kind}|${sort}`;
+  const cached = feedCache.get(key);
+
+  const [items, setItems] = useState<Card[]>(cached?.items ?? []);
+  const [cursor, setCursor] = useState<number | null>(cached?.cursor ?? 0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const sectionRef = useRef<HTMLElement | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const attemptRef = useRef(1);
+  const keyRef = useRef(key);
+  const restoredRef = useRef(false);
 
-  // Reset when filters change (Yapper resets the cursor when sort/kind changes).
+  // Save scroll position continuously for the *current* key.
   useEffect(() => {
-    setItems([]);
-    setCursor(0);
-    setError(null);
-    attemptRef.current = 1;
-  }, [kind, sort]);
+    const onScroll = () => {
+      const snap = feedCache.get(keyRef.current);
+      if (snap) snap.scrollY = window.scrollY;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Snapshot current state before unmount so a remount can rehydrate.
+  useEffect(() => () => {
+    feedCache.set(keyRef.current, { items, cursor, scrollY: window.scrollY });
+  }, [items, cursor]);
+
+  // Handle filter/sort changes within the mounted component.
+  useEffect(() => {
+    if (keyRef.current === key) return;
+    // Persist outgoing key's snapshot.
+    feedCache.set(keyRef.current, { items, cursor, scrollY: window.scrollY });
+    keyRef.current = key;
+    restoredRef.current = false;
+
+    const next = feedCache.get(key);
+    if (next) {
+      // Rehydrate from cache and restore prior scroll on next frame.
+      setItems(next.items);
+      setCursor(next.cursor);
+      setError(null);
+      attemptRef.current = 1;
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: next.scrollY, behavior: "auto" });
+        restoredRef.current = true;
+      });
+    } else {
+      // Fresh key: reset cursor and scroll the feed header into view (Yapper's behavior).
+      setItems([]);
+      setCursor(0);
+      setError(null);
+      attemptRef.current = 1;
+      requestAnimationFrame(() => {
+        sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        restoredRef.current = true;
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+
+  // On first mount, restore scroll if we rehydrated from a previous visit.
+  useEffect(() => {
+    if (cached && lastFeedKey === key) {
+      requestAnimationFrame(() => window.scrollTo({ top: cached.scrollY, behavior: "auto" }));
+    }
+    restoredRef.current = true;
+    lastFeedKey = key;
+    return () => { lastFeedKey = keyRef.current; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const loadMore = useCallback(async () => {
     if (loading || cursor === null) return;
@@ -338,19 +403,21 @@ function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
     }
   }, [loading, cursor, kind]);
 
+  // Sentinel observer — pause until any pending scroll restore has settled,
+  // otherwise restoring to a far-down scrollY would auto-fire loadMore.
   useEffect(() => {
     const el = sentinelRef.current;
-    if (!el || error) return;
+    if (!el || error || !restoredRef.current) return;
     const io = new IntersectionObserver(
       (entries) => entries.forEach((e) => e.isIntersecting && loadMore()),
       { rootMargin: "1200px 0px 1200px 0px" },
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [loadMore, error]);
+  }, [loadMore, error, items.length]);
 
   return (
-    <section>
+    <section ref={sectionRef} className="scroll-mt-20">
       <div className="flex items-end justify-between mb-4">
         <div>
           <h2 className="text-[22px] font-bold tracking-tight uppercase">For You</h2>
