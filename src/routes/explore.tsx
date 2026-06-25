@@ -143,6 +143,10 @@ function ExplorePage() {
   const feedKind: Kind | "all" =
     filter === "Videos" ? "video" : filter === "Images" ? "image" : "all";
 
+  // Debounce filter/sort so rapid clicks don't kick off a stampede of fetches.
+  const debouncedKind = useDebounced(feedKind, 180);
+  const debouncedSort = useDebounced(sort, 180);
+
   return (
     <AppShell>
       <div className="px-6 lg:px-8 pt-5 pb-12 space-y-8">
