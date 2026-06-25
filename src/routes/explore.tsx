@@ -6,6 +6,7 @@ import {
   AlertCircle, ImageOff, RefreshCw,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import toolSeedance from "@/assets/tool-seedance.jpg";
 import toolMotion from "@/assets/tool-motion.jpg";
@@ -206,6 +207,11 @@ function ExplorePage() {
               <SlidersHorizontal className="size-3.5" /> All Filters
             </button>
           </div>
+          {(feedKind !== debouncedKind || sort !== debouncedSort) && (
+            <span className="basis-full sm:basis-auto inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-surface text-[11.5px] text-muted-foreground">
+              <Loader2 className="size-3 animate-spin" /> Switching filter…
+            </span>
+          )}
         </div>
 
         {/* Per-model horizontal rows */}
@@ -377,10 +383,19 @@ function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
   useEffect(() => {
     if (keyRef.current === key) return;
     // Cancel any in-flight fetch from the previous key — its result must not land.
+    const hadInFlight = !!abortRef.current;
     abortRef.current?.abort();
     abortRef.current = null;
     reqIdRef.current += 1;
     setLoading(false);
+    toast.dismiss("feed-loading");
+    if (hadInFlight) {
+      toast.info("Cancelled previous request", {
+        id: "feed-cancel",
+        description: `Switched to ${kind === "all" ? "All" : kind} · ${sort}`,
+        duration: 1800,
+      });
+    }
 
     // Persist outgoing key's snapshot.
     feedCache.set(keyRef.current, { items, cursor, scrollY: window.scrollY });
@@ -402,6 +417,7 @@ function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
       setCursor(0);
       setError(null);
       attemptRef.current = 1;
+      toast.loading(`Loading ${kind === "all" ? "All" : kind} · ${sort}…`, { id: "feed-loading" });
       requestAnimationFrame(() => {
         sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
         restoredRef.current = true;
@@ -433,6 +449,10 @@ function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
 
     setLoading(true);
     setError(null);
+    const isFirstPage = myCursor === 0;
+    if (!isFirstPage) {
+      toast.loading("Loading more…", { id: "feed-loading" });
+    }
     try {
       const page = await fetchPage({
         cursor: myCursor, limit: 18, kind, seed: 13,
@@ -443,15 +463,24 @@ function WaterfallFeed({ kind, sort }: { kind: Kind | "all"; sort: string }) {
       attemptRef.current = 1;
       setItems((prev) => [...prev, ...page.items]);
       setCursor(page.nextCursor);
+      toast.dismiss("feed-loading");
+      if (page.nextCursor === null) {
+        toast.success("You've reached the end", { id: "feed-end", duration: 1600 });
+      }
     } catch (e) {
-      if ((e as DOMException)?.name === "AbortError") return;
+      if ((e as DOMException)?.name === "AbortError") {
+        toast.dismiss("feed-loading");
+        return;
+      }
       if (myId !== reqIdRef.current || myKey !== keyRef.current) return;
       attemptRef.current += 1;
-      setError(e instanceof Error ? e.message : "Failed to load");
+      const msg = e instanceof Error ? e.message : "Failed to load";
+      setError(msg);
+      toast.error(msg, { id: "feed-loading", description: "Tap Retry to try again.", duration: 3500 });
     } finally {
       if (myId === reqIdRef.current) setLoading(false);
     }
-  }, [loading, cursor, kind]);
+  }, [loading, cursor, kind, sort]);
 
   // Sentinel observer — pause until any pending scroll restore has settled,
   // otherwise restoring to a far-down scrollY would auto-fire loadMore.
