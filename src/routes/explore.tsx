@@ -723,7 +723,11 @@ function ExploreCard({ card, full = false, onOpen }: { card: Card; full?: boolea
 
   return (
     <div
-      className={`group cursor-pointer ${full ? "" : "snap-start shrink-0"}`}
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpen?.(card)}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen?.(card); } }}
+      className={`group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 rounded-xl ${full ? "" : "snap-start shrink-0"}`}
       style={full ? undefined : { width: "min(260px, 60vw)" }}
     >
       <div className="relative rounded-xl overflow-hidden bg-surface" style={{ aspectRatio: card.ratio }}>
