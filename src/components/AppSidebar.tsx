@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Home,
   Compass,
@@ -6,19 +6,48 @@ import {
   Sparkles,
   Image as ImageIcon,
   Video,
+  Mic2,
+  Activity,
+  AudioLines,
+  Maximize2,
+  ScanLine,
+  Wrench,
+  Trophy,
+  Settings,
   ChevronDown,
   Plus,
   Search,
   PanelLeft,
   HelpCircle,
-  Languages,
   MessageCircle,
 } from "lucide-react";
+import { useState } from "react";
+
+const mainNav = [
+  { to: "/", icon: Home, label: "Home" },
+  { to: "/explore", icon: Compass, label: "Explore" },
+  { to: "/library", icon: FolderOpen, label: "My Library" },
+  { to: "/tools", icon: Wrench, label: "All Tools" },
+  { to: "/earn", icon: Trophy, label: "Earn" },
+] as const;
+
+const toolsNav = [
+  { to: "/create/agent", icon: Sparkles, label: "Agent" },
+  { to: "/create/image", icon: ImageIcon, label: "Image" },
+  { to: "/create/video", icon: Video, label: "Video" },
+  { to: "/create/lipsync", icon: Mic2, label: "Lipsync" },
+  { to: "/create/motion", icon: Activity, label: "Motion" },
+  { to: "/create/audio", icon: AudioLines, label: "Audio" },
+  { to: "/create/upscale", icon: Maximize2, label: "Upscaler" },
+  { to: "/create/extract", icon: ScanLine, label: "Extractor" },
+] as const;
 
 export function AppSidebar() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const [toolsExpanded, setToolsExpanded] = useState(true);
+
   return (
     <aside className="hidden md:flex flex-col w-60 shrink-0 border-r border-border bg-background h-screen sticky top-0">
-      {/* Brand */}
       <div className="flex items-center justify-between px-4 h-14 border-b border-border/60">
         <Link to="/" className="flex items-center gap-2">
           <div className="size-7 rounded-md bg-[image:var(--gradient-brand)] grid place-items-center text-brand-foreground font-bold shadow-[var(--shadow-glow)]">
@@ -33,41 +62,51 @@ export function AppSidebar() {
 
       <nav className="flex-1 overflow-y-auto scrollbar-hide px-2 py-3 space-y-6">
         <div className="space-y-0.5">
-          <NavItem icon={Home} label="Home" active />
-          <NavItem icon={Compass} label="Explore" />
-          <NavItem icon={FolderOpen} label="My Library" />
+          {mainNav.map((item) => (
+            <NavLink key={item.to} {...item} active={pathname === item.to} />
+          ))}
         </div>
 
         <Section title="Tools" action={<Search className="size-3.5" />}>
-          <NavItem icon={Sparkles} label="Agent" />
-          <NavItem icon={ImageIcon} label="Image" />
-          <NavItem icon={Video} label="Video" />
-          <button className="w-full flex items-center gap-3 px-3 h-9 rounded-md text-sm text-muted-foreground hover:bg-surface-hover hover:text-foreground transition-colors">
-            <ChevronDown className="size-4" />
-            <span>Show More</span>
+          {(toolsExpanded ? toolsNav : toolsNav.slice(0, 3)).map((item) => (
+            <NavLink
+              key={item.to}
+              {...item}
+              active={pathname === item.to}
+            />
+          ))}
+          <button
+            onClick={() => setToolsExpanded((v) => !v)}
+            className="w-full flex items-center gap-3 px-3 h-9 rounded-md text-sm text-muted-foreground hover:bg-surface-hover hover:text-foreground transition-colors"
+          >
+            <ChevronDown className={`size-4 transition-transform ${toolsExpanded ? "rotate-180" : ""}`} />
+            <span>{toolsExpanded ? "Show Less" : "Show More"}</span>
           </button>
         </Section>
 
         <Section title="Sessions" action={<Plus className="size-3.5" />}>
-          <button className="w-full flex items-center gap-3 px-3 h-9 rounded-md text-sm text-muted-foreground hover:bg-surface-hover hover:text-foreground transition-colors">
+          <Link
+            to="/sessions"
+            className="w-full flex items-center gap-3 px-3 h-9 rounded-md text-sm text-muted-foreground hover:bg-surface-hover hover:text-foreground transition-colors"
+          >
             <Plus className="size-4" />
             <span>New Session</span>
-          </button>
+          </Link>
         </Section>
       </nav>
 
       <div className="border-t border-border/60 p-3 space-y-3">
         <div className="flex items-center justify-between px-1 text-muted-foreground">
           <button className="hover:text-foreground"><MessageCircle className="size-4" /></button>
-          <button className="hover:text-foreground"><svg viewBox="0 0 24 24" className="size-4" fill="currentColor"><path d="M18.244 2H21l-6.52 7.45L22 22h-6.79l-4.74-6.21L4.94 22H2.18l6.98-7.98L2 2h6.94l4.3 5.66L18.24 2Zm-2.38 18h1.88L7.22 4H5.22l10.64 16Z"/></svg></button>
-          <button className="hover:text-foreground"><Search className="size-4" /></button>
           <button className="hover:text-foreground"><HelpCircle className="size-4" /></button>
-          <button className="hover:text-foreground"><Languages className="size-4" /></button>
+          <Link to="/settings" className="hover:text-foreground"><Settings className="size-4" /></Link>
         </div>
-        <button className="w-full h-10 rounded-md bg-surface hover:bg-surface-hover border border-border text-sm font-medium flex items-center justify-center gap-2 transition-colors">
-          <span className="size-5 rounded-full bg-foreground/10 grid place-items-center text-[10px]">b</span>
-          Login
-        </button>
+        <Link
+          to="/auth"
+          className="w-full h-10 rounded-md bg-[image:var(--gradient-brand)] text-brand-foreground text-sm font-medium flex items-center justify-center gap-2 shadow-[var(--shadow-glow)] hover:opacity-95 transition"
+        >
+          Sign in
+        </Link>
       </div>
     </aside>
   );
@@ -99,17 +138,20 @@ function Section({
   );
 }
 
-function NavItem({
+function NavLink({
+  to,
   icon: Icon,
   label,
   active,
 }: {
+  to: string;
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   active?: boolean;
 }) {
   return (
-    <button
+    <Link
+      to={to}
       className={`w-full flex items-center gap-3 px-3 h-9 rounded-md text-sm transition-colors ${
         active
           ? "bg-surface text-foreground"
@@ -118,6 +160,6 @@ function NavItem({
     >
       <Icon className="size-4" />
       <span>{label}</span>
-    </button>
+    </Link>
   );
 }

@@ -41,44 +41,45 @@
 :root {
   --radius: 0.75rem;
 
-  /* Dark by default — yapper-style */
-  --background: oklch(0.16 0.005 280);
-  --foreground: oklch(0.97 0.002 280);
+  /* Yapper-style deep indigo/violet dark theme */
+  --background: oklch(0.14 0.012 270);
+  --foreground: oklch(0.98 0.003 270);
 
-  --surface: oklch(0.20 0.008 280);
-  --surface-hover: oklch(0.24 0.01 280);
+  --surface: oklch(0.18 0.015 270);
+  --surface-hover: oklch(0.22 0.018 270);
 
-  --card: oklch(0.20 0.008 280);
-  --card-foreground: oklch(0.97 0.002 280);
+  --card: oklch(0.18 0.015 270);
+  --card-foreground: oklch(0.98 0.003 270);
 
-  --popover: oklch(0.20 0.008 280);
-  --popover-foreground: oklch(0.97 0.002 280);
+  --popover: oklch(0.18 0.015 270);
+  --popover-foreground: oklch(0.98 0.003 270);
 
-  --primary: oklch(0.97 0.002 280);
-  --primary-foreground: oklch(0.16 0.005 280);
+  --primary: oklch(0.98 0.003 270);
+  --primary-foreground: oklch(0.14 0.012 270);
 
-  --secondary: oklch(0.26 0.012 280);
-  --secondary-foreground: oklch(0.97 0.002 280);
+  --secondary: oklch(0.24 0.02 270);
+  --secondary-foreground: oklch(0.98 0.003 270);
 
-  --muted: oklch(0.24 0.01 280);
-  --muted-foreground: oklch(0.65 0.015 280);
+  --muted: oklch(0.22 0.018 270);
+  --muted-foreground: oklch(0.66 0.02 270);
 
-  --accent: oklch(0.28 0.015 280);
-  --accent-foreground: oklch(0.97 0.002 280);
+  --accent: oklch(0.26 0.025 270);
+  --accent-foreground: oklch(0.98 0.003 270);
 
   --destructive: oklch(0.62 0.22 25);
-  --destructive-foreground: oklch(0.98 0.005 280);
+  --destructive-foreground: oklch(0.98 0.005 270);
 
-  --border: oklch(0.28 0.01 280);
-  --input: oklch(0.28 0.01 280);
-  --ring: oklch(0.55 0.18 250);
+  --border: oklch(0.26 0.018 270);
+  --input: oklch(0.26 0.018 270);
+  --ring: oklch(0.62 0.2 280);
 
-  /* Brand — Betty pink/magenta accent */
-  --brand: oklch(0.66 0.21 350);
-  --brand-foreground: oklch(0.98 0.005 280);
+  /* Yapper brand: indigo → violet */
+  --brand: oklch(0.62 0.22 280);
+  --brand-foreground: oklch(0.99 0.005 270);
 
-  --gradient-brand: linear-gradient(135deg, oklch(0.66 0.21 350), oklch(0.62 0.22 295));
-  --shadow-glow: 0 8px 32px -8px color-mix(in oklab, var(--brand) 45%, transparent);
+  --gradient-brand: linear-gradient(135deg, oklch(0.62 0.22 265), oklch(0.62 0.24 305));
+  --gradient-brand-soft: linear-gradient(135deg, oklch(0.62 0.22 265 / 0.18), oklch(0.62 0.24 305 / 0.18));
+  --shadow-glow: 0 8px 32px -8px color-mix(in oklab, var(--brand) 55%, transparent);
 }
 
 @layer base {
