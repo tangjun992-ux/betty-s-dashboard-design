@@ -50,31 +50,54 @@ function fetchPage(opts: {
   model?: string;
   seed?: number;
   attempt?: number;
+  signal?: AbortSignal;
 }): Promise<{ items: Card[]; nextCursor: number | null }> {
-  const { cursor, limit, kind = "all", model, seed = 0, attempt = 1 } = opts;
-  return new Promise((res, rej) => setTimeout(() => {
-    if (attempt === 1 && cursor > 0 && Math.random() < 0.12) {
-      rej(new Error("Network error while loading more"));
+  const { cursor, limit, kind = "all", model, seed = 0, attempt = 1, signal } = opts;
+  return new Promise((res, rej) => {
+    if (signal?.aborted) {
+      rej(new DOMException("Aborted", "AbortError"));
       return;
     }
-    const items: Card[] = Array.from({ length: limit }, (_, i) => {
-      const idx = cursor + i + seed;
-      const k: Kind = kind === "all" ? (idx % 3 === 0 ? "video" : "image") : kind;
-      const m = model ?? allModels[idx % allModels.length];
-      return {
-        id: `${m}-${idx}`,
-        src: pool[idx % pool.length],
-        ratio: ratios[idx % ratios.length],
-        kind: k,
-        model: m,
-        duration: k === "video" ? `0:${String(5 + ((idx * 7) % 50)).padStart(2, "0")}` : undefined,
-        likes: 120 + ((idx * 37 + seed * 11) % 4000),
-      };
-    });
-    const next = cursor + limit;
-    const nextCursor = next >= 120 ? null : next;
-    res({ items, nextCursor });
-  }, 480));
+    const t = setTimeout(() => {
+      signal?.removeEventListener("abort", onAbort);
+      if (attempt === 1 && cursor > 0 && Math.random() < 0.12) {
+        rej(new Error("Network error while loading more"));
+        return;
+      }
+      const items: Card[] = Array.from({ length: limit }, (_, i) => {
+        const idx = cursor + i + seed;
+        const k: Kind = kind === "all" ? (idx % 3 === 0 ? "video" : "image") : kind;
+        const m = model ?? allModels[idx % allModels.length];
+        return {
+          id: `${m}-${idx}`,
+          src: pool[idx % pool.length],
+          ratio: ratios[idx % ratios.length],
+          kind: k,
+          model: m,
+          duration: k === "video" ? `0:${String(5 + ((idx * 7) % 50)).padStart(2, "0")}` : undefined,
+          likes: 120 + ((idx * 37 + seed * 11) % 4000),
+        };
+      });
+      const next = cursor + limit;
+      const nextCursor = next >= 120 ? null : next;
+      res({ items, nextCursor });
+    }, 480);
+    const onAbort = () => {
+      clearTimeout(t);
+      rej(new DOMException("Aborted", "AbortError"));
+    };
+    signal?.addEventListener("abort", onAbort, { once: true });
+  });
+}
+
+// Debounce a rapidly-changing value (e.g. filter/sort while the user is clicking around).
+function useDebounced<T>(value: T, delay = 180): T {
+  const [v, setV] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setV(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return v;
 }
 
 function SkeletonCard({ ratio, full = false }: { ratio: string; full?: boolean }) {
