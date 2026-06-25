@@ -151,7 +151,7 @@ function ProfilePage() {
             </div>
           ) : (
             <div className="columns-2 sm:columns-3 md:columns-4 xl:columns-5 gap-3 [column-fill:_balance]">
-              {generations.map((g) => (
+              {generations.map((g: typeof generations[number]) => (
                 <div key={g.id} className="break-inside-avoid mb-3 rounded-xl overflow-hidden bg-surface border border-border">
                   {g.thumb_url || g.asset_url ? (
                     <img
