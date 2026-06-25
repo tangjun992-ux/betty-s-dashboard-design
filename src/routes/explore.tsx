@@ -665,7 +665,7 @@ function WaterfallFeed({ kind, sort, onOpen }: { kind: Kind | "all"; sort: strin
       <div className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-3 [column-fill:_balance]">
         {items.map((c) => (
           <div key={c.id} className="mb-3 break-inside-avoid">
-            <ExploreCard card={c} full />
+            <ExploreCard card={c} full onOpen={onOpen} />
           </div>
         ))}
         {loading && Array.from({ length: 10 }).map((_, i) => (
