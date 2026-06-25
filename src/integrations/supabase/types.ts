@@ -14,16 +14,276 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      credits_ledger: {
+        Row: {
+          created_at: string
+          delta: number
+          id: string
+          reason: string
+          ref_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          delta: number
+          id?: string
+          reason: string
+          ref_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          delta?: number
+          id?: string
+          reason?: string
+          ref_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      follows: {
+        Row: {
+          created_at: string
+          followee_id: string
+          follower_id: string
+        }
+        Insert: {
+          created_at?: string
+          followee_id: string
+          follower_id: string
+        }
+        Update: {
+          created_at?: string
+          followee_id?: string
+          follower_id?: string
+        }
+        Relationships: []
+      }
+      generations: {
+        Row: {
+          asset_url: string | null
+          created_at: string
+          duration_ms: number | null
+          error: string | null
+          height: number | null
+          id: string
+          is_public: boolean
+          kind: Database["public"]["Enums"]["generation_kind"]
+          like_count: number
+          model: string
+          params: Json
+          prompt: string | null
+          status: Database["public"]["Enums"]["generation_status"]
+          thumb_url: string | null
+          updated_at: string
+          user_id: string
+          width: number | null
+        }
+        Insert: {
+          asset_url?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          height?: number | null
+          id?: string
+          is_public?: boolean
+          kind: Database["public"]["Enums"]["generation_kind"]
+          like_count?: number
+          model: string
+          params?: Json
+          prompt?: string | null
+          status?: Database["public"]["Enums"]["generation_status"]
+          thumb_url?: string | null
+          updated_at?: string
+          user_id: string
+          width?: number | null
+        }
+        Update: {
+          asset_url?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          height?: number | null
+          id?: string
+          is_public?: boolean
+          kind?: Database["public"]["Enums"]["generation_kind"]
+          like_count?: number
+          model?: string
+          params?: Json
+          prompt?: string | null
+          status?: Database["public"]["Enums"]["generation_status"]
+          thumb_url?: string | null
+          updated_at?: string
+          user_id?: string
+          width?: number | null
+        }
+        Relationships: []
+      }
+      likes: {
+        Row: {
+          created_at: string
+          generation_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          generation_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          generation_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "likes_generation_id_fkey"
+            columns: ["generation_id"]
+            isOneToOne: false
+            referencedRelation: "generations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          credits: number
+          display_name: string | null
+          handle: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          credits?: number
+          display_name?: string | null
+          handle?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          credits?: number
+          display_name?: string | null
+          handle?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      session_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          role: string
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          role: string
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          role?: string
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sessions: {
+        Row: {
+          created_at: string
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
+      generation_kind:
+        | "image"
+        | "video"
+        | "audio"
+        | "avatar"
+        | "motion"
+        | "lipsync"
+        | "upscale"
+        | "extract"
+        | "agent"
+      generation_status: "queued" | "running" | "succeeded" | "failed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +410,20 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+      generation_kind: [
+        "image",
+        "video",
+        "audio",
+        "avatar",
+        "motion",
+        "lipsync",
+        "upscale",
+        "extract",
+        "agent",
+      ],
+      generation_status: ["queued", "running", "succeeded", "failed"],
+    },
   },
 } as const
