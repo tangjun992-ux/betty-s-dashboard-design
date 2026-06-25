@@ -10,13 +10,13 @@ export function ToolPill({
   gradient?: string;
 }) {
   return (
-    <button className="group flex items-center gap-3 pr-4 h-12 rounded-xl bg-surface hover:bg-surface-hover border border-border/60 transition-colors">
+    <button className="group flex items-center gap-3 transition-opacity hover:opacity-80">
       <span
-        className={`size-12 rounded-xl bg-gradient-to-br ${gradient} grid place-items-center shrink-0`}
+        className={`size-10 rounded-xl bg-gradient-to-br ${gradient} grid place-items-center shrink-0 shadow-sm`}
       >
-        <Icon className="size-5 text-white" />
+        <Icon className="size-[18px] text-white" />
       </span>
-      <span className="text-sm font-medium pl-1">{label}</span>
+      <span className="text-[14px] font-medium">{label}</span>
     </button>
   );
 }
