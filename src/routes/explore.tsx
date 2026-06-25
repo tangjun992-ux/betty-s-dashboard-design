@@ -434,7 +434,7 @@ function ModelRow({ section, onOpen }: { section: (typeof featuredModels)[number
         ref={scrollerRef}
         className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory -mx-6 lg:-mx-8 px-6 lg:px-8 pb-2"
       >
-        {cards.map((c) => <ExploreCard key={c.id} card={c} />)}
+        {cards.map((c) => <ExploreCard key={c.id} card={c} onOpen={onOpen} />)}
 
         {loading && Array.from({ length: 6 }).map((_, i) => (
           <SkeletonCard key={`sk-${i}`} ratio={ratios[(i + section.seed) % ratios.length]} />
