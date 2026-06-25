@@ -214,7 +214,7 @@ function ExplorePage() {
         ))}
 
         {/* Infinite waterfall feed */}
-        <WaterfallFeed kind={feedKind} sort={sort} />
+        <WaterfallFeed kind={debouncedKind} sort={debouncedSort} />
       </div>
     </AppShell>
   );
