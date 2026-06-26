@@ -109,8 +109,14 @@ function MotionCreate() {
       navigate({ to: "/auth" });
       return;
     }
-    if (!canGenerate || !video || !character) return;
+    if (!video) { toast.error("Please upload a motion video first", { id: "motion" }); return; }
+    if (!character) { toast.error("Please upload a character image first", { id: "motion" }); return; }
+    if (videoTooBig) { toast.error("Motion video must be ≤ 50 MB", { id: "motion" }); return; }
+    if (imageTooBig) { toast.error("Character image must be ≤ 10 MB", { id: "motion" }); return; }
+    if (promptTooLong) { toast.error(`Prompt too long (max ${MAX_PROMPT} chars)`, { id: "motion" }); return; }
+    if (!canGenerate) return;
     setError(null);
+
     setOutput(null);
     setProgress(2);
     setPhase("uploading");
