@@ -55,8 +55,23 @@ function MotionCreate() {
 
   const navigate = useNavigate();
   const cost = mode === "Pro" ? 120 : 80;
-  const canGenerate = !!video && !!character && phase !== "uploading" && phase !== "queued" && phase !== "running";
   const busy = phase === "uploading" || phase === "queued" || phase === "running";
+  const MAX_VIDEO = 50 * 1024 * 1024; // 50MB
+  const MAX_IMAGE = 10 * 1024 * 1024; // 10MB
+  const MAX_PROMPT = 2000;
+  const promptTooLong = prompt.length > MAX_PROMPT;
+  const videoTooBig = !!video && video.file.size > MAX_VIDEO;
+  const imageTooBig = !!character && character.file.size > MAX_IMAGE;
+  const blockReason: string | null =
+    busy ? null
+    : !user ? "Sign in to generate"
+    : !video ? "Upload a motion video to continue"
+    : !character ? "Upload a character image to continue"
+    : videoTooBig ? "Motion video exceeds 50 MB"
+    : imageTooBig ? "Character image exceeds 10 MB"
+    : promptTooLong ? `Prompt is too long (${prompt.length}/${MAX_PROMPT})`
+    : null;
+  const canGenerate = !busy && blockReason === null;
 
   // Load history
   useEffect(() => {
@@ -94,8 +109,14 @@ function MotionCreate() {
       navigate({ to: "/auth" });
       return;
     }
-    if (!canGenerate || !video || !character) return;
+    if (!video) { toast.error("Please upload a motion video first", { id: "motion" }); return; }
+    if (!character) { toast.error("Please upload a character image first", { id: "motion" }); return; }
+    if (videoTooBig) { toast.error("Motion video must be ≤ 50 MB", { id: "motion" }); return; }
+    if (imageTooBig) { toast.error("Character image must be ≤ 10 MB", { id: "motion" }); return; }
+    if (promptTooLong) { toast.error(`Prompt too long (max ${MAX_PROMPT} chars)`, { id: "motion" }); return; }
+    if (!canGenerate) return;
     setError(null);
+
     setOutput(null);
     setProgress(2);
     setPhase("uploading");
@@ -260,11 +281,18 @@ function MotionCreate() {
 
         {/* Floating Generate Bar */}
         <div className="absolute bottom-6 left-6 right-6 pointer-events-none">
-          <div className="pointer-events-auto max-w-[680px] mx-auto">
+          <div className="pointer-events-auto max-w-[680px] mx-auto space-y-2">
+            {blockReason && !busy && (
+              <div className="text-center text-[11.5px] text-amber-300/90 bg-amber-500/10 border border-amber-500/20 rounded-lg py-1.5 px-3">
+                {blockReason}
+              </div>
+            )}
             <button
-              disabled={!canGenerate}
+              disabled={busy}
               onClick={onGenerate}
-              className="w-full h-12 rounded-2xl bg-[image:var(--gradient-brand)] text-brand-foreground text-[14px] font-semibold shadow-[var(--shadow-glow)] hover:opacity-95 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              aria-disabled={!canGenerate}
+              title={blockReason ?? undefined}
+              className="w-full h-12 rounded-2xl bg-[image:var(--gradient-brand)] text-brand-foreground text-[14px] font-semibold shadow-[var(--shadow-glow)] hover:opacity-95 transition disabled:opacity-50 disabled:cursor-not-allowed aria-disabled:opacity-60 flex items-center justify-center gap-2"
             >
               {busy ? (
                 <><Loader2 className="size-4 animate-spin" /> {phase === "uploading" ? "Uploading..." : "Generating..."}</>
@@ -274,6 +302,7 @@ function MotionCreate() {
             </button>
           </div>
         </div>
+
       </div>
     </AppShell>
   );
