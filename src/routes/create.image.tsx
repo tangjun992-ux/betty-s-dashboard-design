@@ -107,14 +107,18 @@ function ImagePage() {
 
   const totalCost = useMemo(() => model.cost * batch, [model, batch]);
 
-  async function onSubmit(paramsToUse?: typeof lastParams) {
+  async function onSubmit(paramsToUse?: typeof lastParams | React.FormEvent | React.MouseEvent) {
     if (!user) { navigate({ to: "/auth" }); return; }
     
-    const activePrompt = paramsToUse ? paramsToUse.prompt : prompt;
-    const activeModel = paramsToUse ? paramsToUse.model : model;
-    const activeAspect = paramsToUse ? paramsToUse.aspect : aspect;
-    const activeQuality = paramsToUse ? paramsToUse.quality : quality;
-    const activeBatch = paramsToUse ? paramsToUse.batch : batch;
+    // Check if paramsToUse is an event
+    const isEvent = paramsToUse && (typeof paramsToUse === "object" && ("preventDefault" in paramsToUse || "target" in paramsToUse));
+    const actualParams = isEvent ? undefined : paramsToUse;
+
+    const activePrompt = actualParams ? actualParams.prompt : prompt;
+    const activeModel = actualParams ? actualParams.model : model;
+    const activeAspect = actualParams ? actualParams.aspect : aspect;
+    const activeQuality = actualParams ? actualParams.quality : quality;
+    const activeBatch = actualParams ? actualParams.batch : batch;
 
     if (!activePrompt.trim() || busy) return;
     setBusy(true); setResult(null);
@@ -141,7 +145,7 @@ function ImagePage() {
       if (controller.signal.aborted) { toast.dismiss(t); return; }
       setResult(res.url);
       endProgress("ok");
-      if (advanced.clearOnSubmit && !paramsToUse) setPrompt("");
+      if (advanced.clearOnSubmit && !actualParams) setPrompt("");
       toast.success("Image ready", { id: t });
     } catch (err) {
       if (controller.signal.aborted) {
