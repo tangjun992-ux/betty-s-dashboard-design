@@ -42,15 +42,19 @@ function ImagePage() {
   });
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<string | null>(null);
-  type Phase = "idle" | "queued" | "running" | "finalizing" | "completed" | "failed";
+  type Phase = "idle" | "queued" | "running" | "finalizing" | "completed" | "failed" | "cancelled";
   const [phase, setPhase] = useState<Phase>("idle");
   const [progress, setProgress] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [errMsg, setErrMsg] = useState<string | null>(null);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const gen = useServerFn(generateImage);
 
-  useEffect(() => () => { if (tickRef.current) clearInterval(tickRef.current); }, []);
+  useEffect(() => () => {
+    if (tickRef.current) clearInterval(tickRef.current);
+    abortRef.current?.abort();
+  }, []);
 
   function startProgress() {
     setPhase("queued"); setProgress(4); setElapsed(0); setErrMsg(null);
@@ -61,18 +65,29 @@ function ImagePage() {
       setElapsed(secs);
       setPhase((p) => (p === "queued" && secs > 1.2 ? "running" : p));
       setProgress((prev) => {
-        // ease toward 92% asymptotically
         const target = 92;
         const next = prev + Math.max(0.3, (target - prev) * 0.045);
         return Math.min(next, target);
       });
     }, 180);
   }
-  function stopProgress(success: boolean, message?: string) {
+  function endProgress(result: "ok" | "fail" | "cancel", message?: string) {
     if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
-    if (success) { setPhase("finalizing"); setProgress(97);
+    if (result === "ok") {
+      setPhase("finalizing"); setProgress(97);
       setTimeout(() => { setPhase("completed"); setProgress(100); }, 280);
-    } else { setPhase("failed"); setErrMsg(message ?? "Generation failed"); }
+    } else if (result === "cancel") {
+      setPhase("cancelled"); setErrMsg(message ?? "Cancelled by you");
+    } else {
+      setPhase("failed"); setErrMsg(message ?? "Generation failed");
+    }
+  }
+
+  function onCancel() {
+    if (!busy) return;
+    abortRef.current?.abort();
+    endProgress("cancel");
+    toast.message("Generation cancelled");
   }
 
   useEffect(() => {
@@ -90,20 +105,34 @@ function ImagePage() {
     if (!prompt.trim() || busy) return;
     setBusy(true); setResult(null);
     startProgress();
+    const controller = new AbortController();
+    abortRef.current = controller;
     const t = toast.loading(`Queued · ${model.label}`);
     try {
       toast.loading(`Generating with ${model.label}…`, { id: t });
-      const res = await gen({ data: { prompt: prompt.trim(), model: model.id, aspect, quality, batch } });
+      const res = await gen({
+        data: { prompt: prompt.trim(), model: model.id, aspect, quality, batch },
+        signal: controller.signal,
+      });
+      if (controller.signal.aborted) { toast.dismiss(t); return; }
       setResult(res.url);
-      stopProgress(true);
+      endProgress("ok");
       if (advanced.clearOnSubmit) setPrompt("");
       toast.success("Image ready", { id: t });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Generation failed";
-      stopProgress(false, msg);
-      toast.error(msg, { id: t });
-    } finally { setBusy(false); }
+      if (controller.signal.aborted) {
+        toast.message("Generation cancelled", { id: t });
+      } else {
+        const msg = err instanceof Error ? err.message : "Generation failed";
+        endProgress("fail", msg);
+        toast.error(msg, { id: t });
+      }
+    } finally {
+      if (abortRef.current === controller) abortRef.current = null;
+      setBusy(false);
+    }
   }
+
 
 
   return (
