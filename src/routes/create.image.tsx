@@ -12,7 +12,10 @@ import { ImageModelPicker } from "@/components/create/ImageModelPicker";
 import { ImageResolutionPopover, ImageBatchPopover } from "@/components/create/ImageOptionPopovers";
 import { AspectPopover, MorePopover, type AdvancedOptions } from "@/components/create/VideoOptionPopovers";
 import { generateImage } from "@/lib/generations.functions";
-import { IMAGE_MODELS, type Aspect, type ImageQuality } from "@/lib/model-registry";
+import { IMAGE_MODELS, type Aspect, type ImageQuality, type ImageModel } from "@/lib/model-registry";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/use-session";
 import toolHeadshot from "@/assets/tool-headshot.jpg";
 import toolSeedance from "@/assets/tool-seedance.jpg";
@@ -57,6 +60,35 @@ function ImagePage() {
     quality: ImageQuality;
     batch: number;
   } | null>(null);
+  const [retryOpen, setRetryOpen] = useState(false);
+  const [retryDraft, setRetryDraft] = useState<{
+    prompt: string; model: ImageModel; aspect: Aspect; quality: ImageQuality; batch: number;
+  } | null>(null);
+
+  function openRetryDialog() {
+    const base = lastParams ?? { prompt, model, aspect, quality, batch };
+    setRetryDraft({
+      prompt: base.prompt,
+      model: base.model,
+      aspect: base.aspect,
+      quality: base.quality,
+      batch: base.batch,
+    });
+    setRetryOpen(true);
+  }
+
+  function submitRetry() {
+    if (!retryDraft) return;
+    const d = retryDraft;
+    // Sync UI controls to chosen params
+    setPrompt(d.prompt);
+    setModel(d.model);
+    setAspect(d.aspect);
+    setQuality(d.quality);
+    setBatch(d.batch);
+    setRetryOpen(false);
+    onSubmit(d);
+  }
 
   useEffect(() => () => {
     if (tickRef.current) clearInterval(tickRef.current);
@@ -242,9 +274,16 @@ function ImagePage() {
                   {result ? (
                     <img src={result} alt={prompt} className="max-h-[480px] rounded-xl" />
                   ) : phase === "failed" || phase === "cancelled" ? (
-                    <button onClick={() => onSubmit(lastParams ?? undefined)} className="text-xs px-3 py-1.5 rounded-md border border-border/60 hover:bg-surface-hover">
-                      {phase === "cancelled" ? "Retry with same settings" : "Retry"}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button onClick={openRetryDialog} className="text-xs px-3 py-1.5 rounded-md border border-border/60 hover:bg-surface-hover">
+                        Retry…
+                      </button>
+                      {phase === "cancelled" && lastParams && (
+                        <button onClick={() => onSubmit(lastParams)} className="text-xs px-3 py-1.5 rounded-md bg-brand text-white hover:opacity-90">
+                          Retry with same settings
+                        </button>
+                      )}
+                    </div>
                   ) : (
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <Loader2 className="size-6 animate-spin text-brand" />
@@ -267,6 +306,93 @@ function ImagePage() {
           { image: bannerInfluencers, title: "Party Influencers", tag: "App" },
         ]}
       />
+      <Dialog open={retryOpen} onOpenChange={setRetryOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Retry with new settings</DialogTitle>
+            <DialogDescription>Tweak the prompt or parameters before resubmitting.</DialogDescription>
+          </DialogHeader>
+          {retryDraft && (
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs text-muted-foreground mb-1.5 block">Prompt</label>
+                <Textarea
+                  value={retryDraft.prompt}
+                  onChange={(e) => setRetryDraft({ ...retryDraft, prompt: e.target.value })}
+                  rows={4}
+                  className="resize-none"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1.5 block">Model</label>
+                <select
+                  value={retryDraft.model.key}
+                  onChange={(e) => {
+                    const m = IMAGE_MODELS.find((x) => x.key === e.target.value) ?? retryDraft.model;
+                    setRetryDraft({
+                      ...retryDraft,
+                      model: m,
+                      aspect: m.aspects.includes(retryDraft.aspect) ? retryDraft.aspect : m.aspects[0],
+                      quality: m.qualities.includes(retryDraft.quality) ? retryDraft.quality : m.qualities[m.qualities.length - 1],
+                      batch: Math.min(retryDraft.batch, m.maxBatch),
+                    });
+                  }}
+                  className="w-full h-9 rounded-md border border-border/60 bg-surface px-2 text-sm"
+                >
+                  {IMAGE_MODELS.map((m) => (
+                    <option key={m.key} value={m.key}>{m.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1.5 block">Aspect</label>
+                  <select
+                    value={retryDraft.aspect}
+                    onChange={(e) => setRetryDraft({ ...retryDraft, aspect: e.target.value as Aspect })}
+                    className="w-full h-9 rounded-md border border-border/60 bg-surface px-2 text-sm"
+                  >
+                    {retryDraft.model.aspects.map((a) => <option key={a} value={a}>{a}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1.5 block">Quality</label>
+                  <select
+                    value={retryDraft.quality}
+                    onChange={(e) => setRetryDraft({ ...retryDraft, quality: e.target.value as ImageQuality })}
+                    className="w-full h-9 rounded-md border border-border/60 bg-surface px-2 text-sm"
+                  >
+                    {retryDraft.model.qualities.map((q) => <option key={q} value={q}>{q}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1.5 block">Batch</label>
+                  <select
+                    value={retryDraft.batch}
+                    onChange={(e) => setRetryDraft({ ...retryDraft, batch: Number(e.target.value) })}
+                    className="w-full h-9 rounded-md border border-border/60 bg-surface px-2 text-sm"
+                  >
+                    {Array.from({ length: retryDraft.model.maxBatch }, (_, i) => i + 1).map((n) => (
+                      <option key={n} value={n}>{n}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>Estimated cost</span>
+                <span className="inline-flex items-center gap-1 text-foreground">
+                  <Coins className="size-3.5 text-amber-400" />
+                  <span className="tabular-nums">{retryDraft.model.cost * retryDraft.batch}</span>
+                </span>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRetryOpen(false)}>Cancel</Button>
+            <Button onClick={submitRetry} disabled={!retryDraft?.prompt.trim()}>Generate</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }
