@@ -1,14 +1,16 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  Image as ImageIcon, Zap, LayoutPanelTop, Box, Cpu, Smartphone,
-  Gem, Hash, SlidersHorizontal, Coins, ImagePlus, Edit3, Loader2,
+  Image as ImageIcon, Zap, LayoutPanelTop, Box, Smartphone,
+  Gem, Hash, SlidersHorizontal, Coins, ImagePlus, Loader2,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
-import { CreateHub, Composer, OptionPill } from "@/components/create/CreateHub";
+import { CreateHub, Composer } from "@/components/create/CreateHub";
+import { ModelPicker, ChoicePill } from "@/components/create/ModelPicker";
 import { generateImage } from "@/lib/generations.functions";
+import { IMAGE_MODELS, type Aspect, type ImageQuality } from "@/lib/model-registry";
 import { useSession } from "@/lib/use-session";
 import toolHeadshot from "@/assets/tool-headshot.jpg";
 import toolSeedance from "@/assets/tool-seedance.jpg";
@@ -25,17 +27,34 @@ function ImagePage() {
   const navigate = useNavigate();
   const { user, loading } = useSession();
   const [prompt, setPrompt] = useState("");
+  const [model, setModel] = useState(IMAGE_MODELS[0]);
+  const [aspect, setAspect] = useState<Aspect>(model.aspects[0]);
+  const [quality, setQuality] = useState<ImageQuality>(model.qualities[model.qualities.length - 1]);
+  const [batch, setBatch] = useState(1);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const gen = useServerFn(generateImage);
+
+  // Coerce dependent params when model changes
+  useEffect(() => {
+    if (!model.aspects.includes(aspect)) setAspect(model.aspects[0]);
+    if (!model.qualities.includes(quality)) setQuality(model.qualities[model.qualities.length - 1]);
+    if (batch > model.maxBatch) setBatch(model.maxBatch);
+  }, [model]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const totalCost = useMemo(() => model.cost * batch, [model, batch]);
+  const batchOptions = useMemo(
+    () => Array.from({ length: model.maxBatch }, (_, i) => i + 1),
+    [model],
+  );
 
   async function onSubmit() {
     if (!user) { navigate({ to: "/auth" }); return; }
     if (!prompt.trim() || busy) return;
     setBusy(true); setResult(null);
-    const t = toast.loading("Generating image…");
+    const t = toast.loading(`Generating with ${model.label}…`);
     try {
-      const res = await gen({ data: { prompt: prompt.trim(), model: "google/gemini-2.5-flash-image", aspect: "9:16" } });
+      const res = await gen({ data: { prompt: prompt.trim(), model: model.id, aspect, quality, batch } });
       setResult(res.url);
       toast.success("Image ready", { id: t });
     } catch (err) {
@@ -68,14 +87,16 @@ function ImagePage() {
               }
               options={
                 <>
-                  <OptionPill icon={Cpu} label="Models" value={<span className="flex items-center gap-1"><span className="size-3 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500" />GPT Image 2</span>} />
-                  <OptionPill icon={Smartphone} value="9:16" />
-                  <OptionPill icon={Gem} value="2K" />
-                  <OptionPill icon={Hash} value="1" />
-                  <OptionPill icon={SlidersHorizontal} value="More" />
-                  <div className="ml-auto flex items-center gap-1.5 text-muted-foreground pr-1">
+                  <ModelPicker models={IMAGE_MODELS} value={model} onChange={setModel} />
+                  <ChoicePill icon={Smartphone} options={model.aspects} value={aspect} onChange={setAspect} />
+                  <ChoicePill icon={Gem} options={model.qualities} value={quality} onChange={setQuality} />
+                  <ChoicePill icon={Hash} options={batchOptions} value={batch} onChange={setBatch} format={(v) => `×${v}`} />
+                  <span className="flex items-center gap-1 h-7 px-2 rounded-md text-[12px] text-muted-foreground/70">
+                    <SlidersHorizontal className="size-3.5" />More
+                  </span>
+                  <div className="ml-auto flex items-center gap-1.5 text-foreground pr-1">
                     <Coins className="size-3.5 text-amber-400" />
-                    <span className="text-[12px] font-medium tabular-nums">10</span>
+                    <span className="text-[12px] font-medium tabular-nums">{totalCost}</span>
                   </div>
                 </>
               }
@@ -85,7 +106,7 @@ function ImagePage() {
                 {busy && !result ? (
                   <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <Loader2 className="size-6 animate-spin text-brand" />
-                    <p className="text-xs">Painting pixels…</p>
+                    <p className="text-xs">Painting pixels with {model.label}…</p>
                   </div>
                 ) : result ? (
                   <img src={result} alt={prompt} className="max-h-[480px] rounded-xl" />
@@ -104,7 +125,6 @@ function ImagePage() {
           { image: bannerInfluencers, title: "Party Influencers", tag: "App" },
         ]}
       />
-      <span className="hidden"><Edit3 /></span>
     </AppShell>
   );
 }
