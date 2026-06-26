@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Image as ImageIcon, Zap, LayoutPanelTop, Box, Coins, ImagePlus, Loader2,
-  CheckCircle2, XCircle, Clock,
+  CheckCircle2, XCircle, Clock, Square,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -42,15 +42,19 @@ function ImagePage() {
   });
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<string | null>(null);
-  type Phase = "idle" | "queued" | "running" | "finalizing" | "completed" | "failed";
+  type Phase = "idle" | "queued" | "running" | "finalizing" | "completed" | "failed" | "cancelled";
   const [phase, setPhase] = useState<Phase>("idle");
   const [progress, setProgress] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [errMsg, setErrMsg] = useState<string | null>(null);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const gen = useServerFn(generateImage);
 
-  useEffect(() => () => { if (tickRef.current) clearInterval(tickRef.current); }, []);
+  useEffect(() => () => {
+    if (tickRef.current) clearInterval(tickRef.current);
+    abortRef.current?.abort();
+  }, []);
 
   function startProgress() {
     setPhase("queued"); setProgress(4); setElapsed(0); setErrMsg(null);
@@ -61,18 +65,29 @@ function ImagePage() {
       setElapsed(secs);
       setPhase((p) => (p === "queued" && secs > 1.2 ? "running" : p));
       setProgress((prev) => {
-        // ease toward 92% asymptotically
         const target = 92;
         const next = prev + Math.max(0.3, (target - prev) * 0.045);
         return Math.min(next, target);
       });
     }, 180);
   }
-  function stopProgress(success: boolean, message?: string) {
+  function endProgress(result: "ok" | "fail" | "cancel", message?: string) {
     if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
-    if (success) { setPhase("finalizing"); setProgress(97);
+    if (result === "ok") {
+      setPhase("finalizing"); setProgress(97);
       setTimeout(() => { setPhase("completed"); setProgress(100); }, 280);
-    } else { setPhase("failed"); setErrMsg(message ?? "Generation failed"); }
+    } else if (result === "cancel") {
+      setPhase("cancelled"); setErrMsg(message ?? "Cancelled by you");
+    } else {
+      setPhase("failed"); setErrMsg(message ?? "Generation failed");
+    }
+  }
+
+  function onCancel() {
+    if (!busy) return;
+    abortRef.current?.abort();
+    endProgress("cancel");
+    toast.message("Generation cancelled");
   }
 
   useEffect(() => {
@@ -90,20 +105,34 @@ function ImagePage() {
     if (!prompt.trim() || busy) return;
     setBusy(true); setResult(null);
     startProgress();
+    const controller = new AbortController();
+    abortRef.current = controller;
     const t = toast.loading(`Queued · ${model.label}`);
     try {
       toast.loading(`Generating with ${model.label}…`, { id: t });
-      const res = await gen({ data: { prompt: prompt.trim(), model: model.id, aspect, quality, batch } });
+      const res = await gen({
+        data: { prompt: prompt.trim(), model: model.id, aspect, quality, batch },
+        signal: controller.signal,
+      });
+      if (controller.signal.aborted) { toast.dismiss(t); return; }
       setResult(res.url);
-      stopProgress(true);
+      endProgress("ok");
       if (advanced.clearOnSubmit) setPrompt("");
       toast.success("Image ready", { id: t });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Generation failed";
-      stopProgress(false, msg);
-      toast.error(msg, { id: t });
-    } finally { setBusy(false); }
+      if (controller.signal.aborted) {
+        toast.message("Generation cancelled", { id: t });
+      } else {
+        const msg = err instanceof Error ? err.message : "Generation failed";
+        endProgress("fail", msg);
+        toast.error(msg, { id: t });
+      }
+    } finally {
+      if (abortRef.current === controller) abortRef.current = null;
+      setBusy(false);
+    }
   }
+
 
 
   return (
@@ -153,16 +182,28 @@ function ImagePage() {
                     {phase === "finalizing" && <><Loader2 className="size-3.5 animate-spin text-brand" /><span>Finalizing & saving…</span></>}
                     {phase === "completed" && <><CheckCircle2 className="size-3.5 text-emerald-400" /><span className="text-emerald-300">Completed</span></>}
                     {phase === "failed" && <><XCircle className="size-3.5 text-red-400" /><span className="text-red-300">{errMsg}</span></>}
+                    {phase === "cancelled" && <><XCircle className="size-3.5 text-amber-400" /><span className="text-amber-300">Cancelled</span></>}
                   </div>
                   <div className="flex items-center gap-3 text-[11px] text-muted-foreground tabular-nums">
                     <span>{elapsed.toFixed(1)}s</span>
                     <span>{Math.round(progress)}%</span>
+                    {busy && (
+                      <button
+                        onClick={onCancel}
+                        className="ml-1 inline-flex items-center gap-1 rounded-md border border-border/60 bg-surface px-2 py-1 text-[11px] text-foreground hover:bg-red-500/10 hover:border-red-500/40 hover:text-red-300 transition-colors"
+                        aria-label="Cancel generation"
+                      >
+                        <Square className="size-3 fill-current" />
+                        Cancel
+                      </button>
+                    )}
                   </div>
                 </div>
                 <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-hover">
                   <div
                     className={`h-full rounded-full transition-[width] duration-200 ease-out ${
                       phase === "failed" ? "bg-red-500"
+                      : phase === "cancelled" ? "bg-amber-500"
                       : phase === "completed" ? "bg-emerald-500"
                       : "bg-gradient-to-r from-brand to-pink-500"
                     } ${phase === "queued" || phase === "running" ? "animate-pulse" : ""}`}
@@ -172,8 +213,10 @@ function ImagePage() {
                 <div className="mt-4 min-h-[180px] grid place-items-center">
                   {result ? (
                     <img src={result} alt={prompt} className="max-h-[480px] rounded-xl" />
-                  ) : phase === "failed" ? (
-                    <button onClick={onSubmit} className="text-xs px-3 py-1.5 rounded-md border border-border/60 hover:bg-surface-hover">Retry</button>
+                  ) : phase === "failed" || phase === "cancelled" ? (
+                    <button onClick={onSubmit} className="text-xs px-3 py-1.5 rounded-md border border-border/60 hover:bg-surface-hover">
+                      {phase === "cancelled" ? "Run again" : "Retry"}
+                    </button>
                   ) : (
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <Loader2 className="size-6 animate-spin text-brand" />
@@ -181,6 +224,7 @@ function ImagePage() {
                     </div>
                   )}
                 </div>
+
               </div>
             )}
           </>
