@@ -50,6 +50,13 @@ function ImagePage() {
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const gen = useServerFn(generateImage);
+  const [lastParams, setLastParams] = useState<{
+    prompt: string;
+    model: typeof DEFAULT_MODEL;
+    aspect: Aspect;
+    quality: ImageQuality;
+    batch: number;
+  } | null>(null);
 
   useEffect(() => () => {
     if (tickRef.current) clearInterval(tickRef.current);
@@ -100,24 +107,45 @@ function ImagePage() {
 
   const totalCost = useMemo(() => model.cost * batch, [model, batch]);
 
-  async function onSubmit() {
+  async function onSubmit(paramsToUse?: typeof lastParams | React.FormEvent | React.MouseEvent) {
     if (!user) { navigate({ to: "/auth" }); return; }
-    if (!prompt.trim() || busy) return;
+    
+    // Check if paramsToUse is an event
+    const isEvent = paramsToUse && (typeof paramsToUse === "object" && ("preventDefault" in paramsToUse || "target" in paramsToUse));
+    const actualParams = isEvent ? undefined : paramsToUse;
+
+    const activePrompt = actualParams ? actualParams.prompt : prompt;
+    const activeModel = actualParams ? actualParams.model : model;
+    const activeAspect = actualParams ? actualParams.aspect : aspect;
+    const activeQuality = actualParams ? actualParams.quality : quality;
+    const activeBatch = actualParams ? actualParams.batch : batch;
+
+    if (!activePrompt.trim() || busy) return;
     setBusy(true); setResult(null);
+    
+    // Save these parameters as the last used parameters
+    setLastParams({
+      prompt: activePrompt,
+      model: activeModel,
+      aspect: activeAspect,
+      quality: activeQuality,
+      batch: activeBatch
+    });
+
     startProgress();
     const controller = new AbortController();
     abortRef.current = controller;
-    const t = toast.loading(`Queued · ${model.label}`);
+    const t = toast.loading(`Queued · ${activeModel.label}`);
     try {
-      toast.loading(`Generating with ${model.label}…`, { id: t });
+      toast.loading(`Generating with ${activeModel.label}…`, { id: t });
       const res = await gen({
-        data: { prompt: prompt.trim(), model: model.id, aspect, quality, batch },
+        data: { prompt: activePrompt.trim(), model: activeModel.id, aspect: activeAspect, quality: activeQuality, batch: activeBatch },
         signal: controller.signal,
       });
       if (controller.signal.aborted) { toast.dismiss(t); return; }
       setResult(res.url);
       endProgress("ok");
-      if (advanced.clearOnSubmit) setPrompt("");
+      if (advanced.clearOnSubmit && !actualParams) setPrompt("");
       toast.success("Image ready", { id: t });
     } catch (err) {
       if (controller.signal.aborted) {
@@ -214,8 +242,8 @@ function ImagePage() {
                   {result ? (
                     <img src={result} alt={prompt} className="max-h-[480px] rounded-xl" />
                   ) : phase === "failed" || phase === "cancelled" ? (
-                    <button onClick={onSubmit} className="text-xs px-3 py-1.5 rounded-md border border-border/60 hover:bg-surface-hover">
-                      {phase === "cancelled" ? "Run again" : "Retry"}
+                    <button onClick={() => onSubmit(lastParams ?? undefined)} className="text-xs px-3 py-1.5 rounded-md border border-border/60 hover:bg-surface-hover">
+                      {phase === "cancelled" ? "Retry with same settings" : "Retry"}
                     </button>
                   ) : (
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
