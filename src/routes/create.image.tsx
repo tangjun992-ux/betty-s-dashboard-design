@@ -60,6 +60,35 @@ function ImagePage() {
     quality: ImageQuality;
     batch: number;
   } | null>(null);
+  const [retryOpen, setRetryOpen] = useState(false);
+  const [retryDraft, setRetryDraft] = useState<{
+    prompt: string; model: ImageModel; aspect: Aspect; quality: ImageQuality; batch: number;
+  } | null>(null);
+
+  function openRetryDialog() {
+    const base = lastParams ?? { prompt, model, aspect, quality, batch };
+    setRetryDraft({
+      prompt: base.prompt,
+      model: base.model,
+      aspect: base.aspect,
+      quality: base.quality,
+      batch: base.batch,
+    });
+    setRetryOpen(true);
+  }
+
+  function submitRetry() {
+    if (!retryDraft) return;
+    const d = retryDraft;
+    // Sync UI controls to chosen params
+    setPrompt(d.prompt);
+    setModel(d.model);
+    setAspect(d.aspect);
+    setQuality(d.quality);
+    setBatch(d.batch);
+    setRetryOpen(false);
+    onSubmit(d);
+  }
 
   useEffect(() => () => {
     if (tickRef.current) clearInterval(tickRef.current);
