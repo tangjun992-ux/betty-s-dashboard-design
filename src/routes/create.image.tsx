@@ -182,16 +182,28 @@ function ImagePage() {
                     {phase === "finalizing" && <><Loader2 className="size-3.5 animate-spin text-brand" /><span>Finalizing & saving…</span></>}
                     {phase === "completed" && <><CheckCircle2 className="size-3.5 text-emerald-400" /><span className="text-emerald-300">Completed</span></>}
                     {phase === "failed" && <><XCircle className="size-3.5 text-red-400" /><span className="text-red-300">{errMsg}</span></>}
+                    {phase === "cancelled" && <><XCircle className="size-3.5 text-amber-400" /><span className="text-amber-300">Cancelled</span></>}
                   </div>
                   <div className="flex items-center gap-3 text-[11px] text-muted-foreground tabular-nums">
                     <span>{elapsed.toFixed(1)}s</span>
                     <span>{Math.round(progress)}%</span>
+                    {busy && (
+                      <button
+                        onClick={onCancel}
+                        className="ml-1 inline-flex items-center gap-1 rounded-md border border-border/60 bg-surface px-2 py-1 text-[11px] text-foreground hover:bg-red-500/10 hover:border-red-500/40 hover:text-red-300 transition-colors"
+                        aria-label="Cancel generation"
+                      >
+                        <Square className="size-3 fill-current" />
+                        Cancel
+                      </button>
+                    )}
                   </div>
                 </div>
                 <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-hover">
                   <div
                     className={`h-full rounded-full transition-[width] duration-200 ease-out ${
                       phase === "failed" ? "bg-red-500"
+                      : phase === "cancelled" ? "bg-amber-500"
                       : phase === "completed" ? "bg-emerald-500"
                       : "bg-gradient-to-r from-brand to-pink-500"
                     } ${phase === "queued" || phase === "running" ? "animate-pulse" : ""}`}
@@ -201,8 +213,10 @@ function ImagePage() {
                 <div className="mt-4 min-h-[180px] grid place-items-center">
                   {result ? (
                     <img src={result} alt={prompt} className="max-h-[480px] rounded-xl" />
-                  ) : phase === "failed" ? (
-                    <button onClick={onSubmit} className="text-xs px-3 py-1.5 rounded-md border border-border/60 hover:bg-surface-hover">Retry</button>
+                  ) : phase === "failed" || phase === "cancelled" ? (
+                    <button onClick={onSubmit} className="text-xs px-3 py-1.5 rounded-md border border-border/60 hover:bg-surface-hover">
+                      {phase === "cancelled" ? "Run again" : "Retry"}
+                    </button>
                   ) : (
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <Loader2 className="size-6 animate-spin text-brand" />
@@ -210,6 +224,7 @@ function ImagePage() {
                     </div>
                   )}
                 </div>
+
               </div>
             )}
           </>
