@@ -1,14 +1,18 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Video, Zap, Mic2, Activity, Smartphone, Clock, Gem,
-  SlidersHorizontal, Coins, Loader2,
+  Video, Zap, Mic2, Activity, Coins, Loader2,
+  Puzzle, Images, Film, AudioLines,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { CreateHub, Composer } from "@/components/create/CreateHub";
-import { ModelPicker, ChoicePill } from "@/components/create/ModelPicker";
+import { VideoModelPicker } from "@/components/create/VideoModelPicker";
+import {
+  AspectPopover, ResolutionPopover, DurationPopover, BatchPopover, MorePopover,
+  type AdvancedOptions,
+} from "@/components/create/VideoOptionPopovers";
 import { generateVideo, pollGeneration } from "@/lib/video.functions";
 import { VIDEO_MODELS, type Aspect, type VideoResolution } from "@/lib/model-registry";
 import { useSession } from "@/lib/use-session";
@@ -23,14 +27,20 @@ export const Route = createFileRoute("/create/video")({
   component: VideoPage,
 });
 
+const DEFAULT_MODEL = VIDEO_MODELS.find((m) => m.key === "seedance-2-fast") ?? VIDEO_MODELS[0];
+
 function VideoPage() {
   const navigate = useNavigate();
   const { user, loading } = useSession();
   const [prompt, setPrompt] = useState("");
-  const [model, setModel] = useState(VIDEO_MODELS[0]);
-  const [aspect, setAspect] = useState<Aspect>(model.aspects[0]);
-  const [duration, setDuration] = useState<number>(model.durations[0]);
-  const [resolution, setResolution] = useState<VideoResolution>(model.resolutions[0]);
+  const [model, setModel] = useState(DEFAULT_MODEL);
+  const [aspect, setAspect] = useState<Aspect>("9:16");
+  const [duration, setDuration] = useState<number>(15);
+  const [resolution, setResolution] = useState<VideoResolution>("720p");
+  const [batch, setBatch] = useState(1);
+  const [advanced, setAdvanced] = useState<AdvancedOptions>({
+    clearOnSubmit: true, fallbackModels: false, autoRetries: true,
+  });
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
@@ -42,12 +52,14 @@ function VideoPage() {
 
   // Coerce params when model changes
   useEffect(() => {
-    if (!model.aspects.includes(aspect)) setAspect(model.aspects[0]);
-    if (!model.durations.includes(duration)) setDuration(model.durations[0]);
-    if (!model.resolutions.includes(resolution)) setResolution(model.resolutions[0]);
+    if (!model.aspects.includes(aspect)) setAspect(model.aspects.includes("9:16") ? "9:16" : model.aspects[0]);
+    if (!model.durations.includes(duration)) setDuration(model.durations[model.durations.length - 1]);
+    // Server only supports 480p/720p/1080p — clamp 4K down
+    const safeRes: VideoResolution[] = model.resolutions.filter((r) => r !== "4K");
+    if (!safeRes.includes(resolution)) setResolution(safeRes.includes("720p") ? "720p" : safeRes[0] ?? "720p");
   }, [model]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const cost = useMemo(() => model.cost(duration, resolution), [model, duration, resolution]);
+  const cost = useMemo(() => model.cost(duration, resolution) * batch, [model, duration, resolution, batch]);
 
   async function startPolling(id: string, toastId: string | number) {
     let attempts = 0;
@@ -86,10 +98,12 @@ function VideoPage() {
     if (!user) { navigate({ to: "/auth" }); return; }
     if (!prompt.trim() || busy) return;
     setBusy(true); setResult(null);
+    const safeRes: VideoResolution = resolution === "4K" ? "1080p" : resolution;
     const t = toast.loading(`Queued — ${model.label} ~1–2 min…`);
     try {
-      const r = await submit({ data: { prompt: prompt.trim(), model: model.id, aspect, duration, resolution } });
+      const r = await submit({ data: { prompt: prompt.trim(), model: model.id, aspect, duration, resolution: safeRes } });
       setJobId(r.id);
+      if (advanced.clearOnSubmit) setPrompt("");
       startPolling(r.id, t);
     } catch (err) {
       setBusy(false);
@@ -117,19 +131,21 @@ function VideoPage() {
               disabled={loading}
               leading={
                 <div className="flex gap-2">
-                  <FrameSlot label="Start frame" enabled={model.supportsStartFrame} />
-                  <FrameSlot label="End frame" enabled={model.supportsEndFrame} />
+                  <RefTile label="Elements" icon={Puzzle} />
+                  <RefTile label="Ref Images" icon={Images} />
+                  <RefTile label="Ref Video" icon={Film} />
+                  <RefTile label="Ref Audio" icon={AudioLines} />
                 </div>
               }
               options={
                 <>
-                  <ModelPicker models={VIDEO_MODELS} value={model} onChange={setModel} />
-                  <ChoicePill icon={Smartphone} options={model.aspects} value={aspect} onChange={setAspect} />
-                  <ChoicePill icon={Clock} options={model.durations} value={duration} onChange={setDuration} format={(v) => `${v}s`} />
-                  <ChoicePill icon={Gem} options={model.resolutions} value={resolution} onChange={setResolution} />
-                  <span className="flex items-center gap-1 h-7 px-2 rounded-md text-[12px] text-muted-foreground/70">
-                    <SlidersHorizontal className="size-3.5" />More
-                  </span>
+                  <VideoModelPicker value={model} onChange={setModel} />
+                  <span className="text-muted-foreground/30">·</span>
+                  <AspectPopover options={model.aspects} value={aspect} onChange={setAspect} />
+                  <ResolutionPopover options={model.resolutions} value={resolution} onChange={setResolution} />
+                  <DurationPopover options={model.durations} value={duration} onChange={setDuration} />
+                  <BatchPopover max={4} value={batch} onChange={setBatch} />
+                  <MorePopover value={advanced} onChange={setAdvanced} />
                   <div className="ml-auto flex items-center gap-1.5 text-foreground pr-1">
                     <Coins className="size-3.5 text-amber-400" />
                     <span className="text-[12px] font-medium tabular-nums">{cost}</span>
@@ -165,18 +181,14 @@ function VideoPage() {
   );
 }
 
-function FrameSlot({ label, enabled }: { label: string; enabled: boolean }) {
+function RefTile({ label, icon: Icon }: { label: string; icon: React.ComponentType<{ className?: string }> }) {
   return (
     <button
-      disabled={!enabled}
-      title={enabled ? label : `${label} not supported by this model`}
-      className={`w-[88px] h-[88px] rounded-xl border border-border bg-background/40 flex flex-col items-center justify-center gap-1.5 text-muted-foreground transition-colors ${enabled ? "hover:bg-surface-hover" : "opacity-40 cursor-not-allowed"}`}
       type="button"
+      className="w-[88px] h-[88px] rounded-xl border border-border/60 bg-white/[0.02] hover:bg-white/[0.05] flex flex-col items-center justify-center gap-1.5 text-muted-foreground transition-colors"
     >
-      <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/>
-      </svg>
-      <span className="text-[10.5px] leading-tight text-center">{label}</span>
+      <Icon className="size-4" />
+      <span className="text-[11px] leading-tight">{label}</span>
     </button>
   );
 }
