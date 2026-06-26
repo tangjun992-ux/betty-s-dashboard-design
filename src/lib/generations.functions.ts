@@ -1,14 +1,30 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { findImageModel, IMAGE_MODELS } from "./model-registry";
 
 const ImageInput = z.object({
   prompt: z.string().min(2).max(2000),
-  model: z.enum(["google/gemini-2.5-flash-image", "google/gemini-3.1-flash-image"]).default("google/gemini-2.5-flash-image"),
-  aspect: z.enum(["1:1", "16:9", "9:16", "4:5"]).default("1:1"),
+  model: z.string().default(IMAGE_MODELS[0].id),
+  aspect: z.string().default("1:1"),
+  quality: z.enum(["1K", "2K", "4K"]).default("1K"),
+  batch: z.number().int().min(1).max(4).default(1),
 });
 
-const COST_IMAGE = 5;
+function aspectToSize(aspect: string, quality: "1K" | "2K" | "4K"): string {
+  const base = quality === "4K" ? 2048 : quality === "2K" ? 1536 : 1024;
+  const map: Record<string, [number, number]> = {
+    "1:1": [base, base],
+    "16:9": [Math.round(base * 16 / 9 / 64) * 64, base],
+    "9:16": [base, Math.round(base * 16 / 9 / 64) * 64],
+    "4:3": [Math.round(base * 4 / 3 / 64) * 64, base],
+    "3:4": [base, Math.round(base * 4 / 3 / 64) * 64],
+    "4:5": [base, Math.round(base * 5 / 4 / 64) * 64],
+    "21:9": [Math.round(base * 21 / 9 / 64) * 64, base],
+  };
+  const [w, h] = map[aspect] ?? [base, base];
+  return `${w}x${h}`;
+}
 
 export const generateImage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -18,17 +34,26 @@ export const generateImage = createServerFn({ method: "POST" })
     if (!apiKey) throw new Error("AI service not configured");
     const { supabase, userId } = context;
 
-    // Credit check
-    const { data: prof } = await supabase
-      .from("profiles")
-      .select("credits")
-      .eq("id", userId)
-      .maybeSingle();
-    if (!prof || prof.credits < COST_IMAGE) {
-      throw new Error("Not enough credits. Earn or top up to keep creating.");
+    const model = findImageModel(data.model);
+    if (!model) throw new Error(`Unsupported image model: ${data.model}`);
+    if (!model.aspects.includes(data.aspect as never)) {
+      throw new Error(`${model.label} doesn't support aspect ${data.aspect}`);
+    }
+    if (!model.qualities.includes(data.quality)) {
+      throw new Error(`${model.label} doesn't support quality ${data.quality}`);
+    }
+    if (data.batch > model.maxBatch) {
+      throw new Error(`${model.label} supports max ${model.maxBatch} per run`);
     }
 
-    // Insert placeholder row
+    const totalCost = model.cost * data.batch;
+
+    const { data: prof } = await supabase
+      .from("profiles").select("credits").eq("id", userId).maybeSingle();
+    if (!prof || prof.credits < totalCost) {
+      throw new Error(`Need ${totalCost} credits to run this model.`);
+    }
+
     const { data: row, error: insErr } = await supabase
       .from("generations")
       .insert({
@@ -36,56 +61,79 @@ export const generateImage = createServerFn({ method: "POST" })
         kind: "image",
         model: data.model,
         prompt: data.prompt,
-        params: { aspect: data.aspect },
+        params: { aspect: data.aspect, quality: data.quality, batch: data.batch },
         status: "running",
       })
-      .select("id")
-      .single();
+      .select("id").single();
     if (insErr || !row) throw new Error(insErr?.message ?? "Failed to start generation");
 
     try {
-      // Call Lovable AI Gateway (OpenAI-compatible chat completions with image modality)
-      const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: data.model,
-          messages: [
-            { role: "user", content: data.prompt },
-          ],
-          modalities: ["image", "text"],
-        }),
-      });
+      let dataUrl: string | undefined;
+      let mime = "image/png";
 
-      if (!resp.ok) {
-        const text = await resp.text();
-        if (resp.status === 429) throw new Error("Rate limited. Try again shortly.");
-        if (resp.status === 402) throw new Error("AI credits exhausted. Add credits in Settings.");
-        throw new Error(`AI error: ${text.slice(0, 200)}`);
+      if (model.endpoint === "chat") {
+        // Gemini image family — chat completions with image modality
+        const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: data.model,
+            messages: [{ role: "user", content: data.prompt }],
+            modalities: ["image", "text"],
+          }),
+        });
+        if (!resp.ok) {
+          const t = await resp.text();
+          if (resp.status === 429) throw new Error("Rate limited. Try again shortly.");
+          if (resp.status === 402) throw new Error("AI credits exhausted.");
+          throw new Error(`AI error: ${t.slice(0, 200)}`);
+        }
+        const json = await resp.json();
+        dataUrl = json?.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+      } else {
+        // OpenAI image route — /v1/images/generations
+        const size = aspectToSize(data.aspect, data.quality);
+        const resp = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: data.model,
+            prompt: data.prompt,
+            size,
+            quality: data.quality === "2K" || data.quality === "4K" ? "high" : "low",
+            n: 1,
+          }),
+        });
+        if (!resp.ok) {
+          const t = await resp.text();
+          if (resp.status === 429) throw new Error("Rate limited.");
+          if (resp.status === 402) throw new Error("AI credits exhausted.");
+          throw new Error(`AI error: ${t.slice(0, 200)}`);
+        }
+        const json = await resp.json();
+        const b64 = json?.data?.[0]?.b64_json;
+        const url = json?.data?.[0]?.url;
+        if (b64) dataUrl = `data:image/png;base64,${b64}`;
+        else if (url) {
+          const dl = await fetch(url);
+          const buf = new Uint8Array(await dl.arrayBuffer());
+          const bin = Array.from(buf, (b) => String.fromCharCode(b)).join("");
+          dataUrl = `data:image/png;base64,${btoa(bin)}`;
+        }
       }
 
-      const json = await resp.json();
-      // Image returned as message.images[0].image_url.url (data URL)
-      const dataUrl: string | undefined =
-        json?.choices?.[0]?.message?.images?.[0]?.image_url?.url;
       if (!dataUrl || !dataUrl.startsWith("data:")) {
         throw new Error("No image returned from model");
       }
-
-      // Decode data URL -> bytes
       const commaIdx = dataUrl.indexOf(",");
-      const meta = dataUrl.slice(5, commaIdx); // e.g. image/png;base64
+      const meta = dataUrl.slice(5, commaIdx);
       const b64 = dataUrl.slice(commaIdx + 1);
-      const mime = meta.split(";")[0] || "image/png";
+      mime = meta.split(";")[0] || "image/png";
       const ext = mime.split("/")[1] || "png";
       const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
 
       const yyyymm = new Date().toISOString().slice(0, 7).replace("-", "");
       const path = `${userId}/${yyyymm}/${row.id}.${ext}`;
-
       const { error: upErr } = await supabase.storage
         .from("generations")
         .upload(path, bytes, { contentType: mime, upsert: false });
@@ -94,33 +142,24 @@ export const generateImage = createServerFn({ method: "POST" })
       const { data: signed } = await supabase.storage
         .from("generations")
         .createSignedUrl(path, 60 * 60 * 24 * 365);
-
       const assetUrl = signed?.signedUrl ?? null;
 
-      await supabase
-        .from("generations")
+      await supabase.from("generations")
         .update({ status: "succeeded", asset_url: assetUrl, thumb_url: assetUrl })
         .eq("id", row.id);
 
-      // Charge credits
       await supabase.from("credits_ledger").insert({
-        user_id: userId,
-        delta: -COST_IMAGE,
-        reason: "image_generation",
-        ref_id: row.id,
+        user_id: userId, delta: -totalCost,
+        reason: `image:${model.key}`, ref_id: row.id,
       });
-      await supabase
-        .from("profiles")
-        .update({ credits: prof.credits - COST_IMAGE })
-        .eq("id", userId);
+      await supabase.from("profiles")
+        .update({ credits: prof.credits - totalCost }).eq("id", userId);
 
       return { id: row.id, url: assetUrl };
     } catch (err) {
       const message = err instanceof Error ? err.message : "Generation failed";
-      await supabase
-        .from("generations")
-        .update({ status: "failed", error: message })
-        .eq("id", row.id);
+      await supabase.from("generations")
+        .update({ status: "failed", error: message }).eq("id", row.id);
       throw new Error(message);
     }
   });
