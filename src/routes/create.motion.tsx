@@ -55,8 +55,23 @@ function MotionCreate() {
 
   const navigate = useNavigate();
   const cost = mode === "Pro" ? 120 : 80;
-  const canGenerate = !!video && !!character && phase !== "uploading" && phase !== "queued" && phase !== "running";
   const busy = phase === "uploading" || phase === "queued" || phase === "running";
+  const MAX_VIDEO = 50 * 1024 * 1024; // 50MB
+  const MAX_IMAGE = 10 * 1024 * 1024; // 10MB
+  const MAX_PROMPT = 2000;
+  const promptTooLong = prompt.length > MAX_PROMPT;
+  const videoTooBig = !!video && video.file.size > MAX_VIDEO;
+  const imageTooBig = !!character && character.file.size > MAX_IMAGE;
+  const blockReason: string | null =
+    busy ? null
+    : !user ? "Sign in to generate"
+    : !video ? "Upload a motion video to continue"
+    : !character ? "Upload a character image to continue"
+    : videoTooBig ? "Motion video exceeds 50 MB"
+    : imageTooBig ? "Character image exceeds 10 MB"
+    : promptTooLong ? `Prompt is too long (${prompt.length}/${MAX_PROMPT})`
+    : null;
+  const canGenerate = !busy && blockReason === null;
 
   // Load history
   useEffect(() => {
