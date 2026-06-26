@@ -7,18 +7,20 @@ const ImageInput = z.object({
   prompt: z.string().min(2).max(2000),
   model: z.string().default(IMAGE_MODELS[0].id),
   aspect: z.string().default("1:1"),
-  quality: z.enum(["1K", "2K", "4K"]).default("1K"),
-  batch: z.number().int().min(1).max(4).default(1),
+  quality: z.enum(["720p", "1K", "2K", "4K"]).default("1K"),
+  batch: z.number().int().min(1).max(8).default(1),
 });
 
-function aspectToSize(aspect: string, quality: "1K" | "2K" | "4K"): string {
-  const base = quality === "4K" ? 2048 : quality === "2K" ? 1536 : 1024;
+function aspectToSize(aspect: string, quality: "720p" | "1K" | "2K" | "4K"): string {
+  const base = quality === "4K" ? 2048 : quality === "2K" ? 1536 : quality === "720p" ? 768 : 1024;
   const map: Record<string, [number, number]> = {
     "1:1": [base, base],
     "16:9": [Math.round(base * 16 / 9 / 64) * 64, base],
     "9:16": [base, Math.round(base * 16 / 9 / 64) * 64],
     "4:3": [Math.round(base * 4 / 3 / 64) * 64, base],
     "3:4": [base, Math.round(base * 4 / 3 / 64) * 64],
+    "3:2": [Math.round(base * 3 / 2 / 64) * 64, base],
+    "2:3": [base, Math.round(base * 3 / 2 / 64) * 64],
     "4:5": [base, Math.round(base * 5 / 4 / 64) * 64],
     "21:9": [Math.round(base * 21 / 9 / 64) * 64, base],
   };
