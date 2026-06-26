@@ -274,9 +274,16 @@ function ImagePage() {
                   {result ? (
                     <img src={result} alt={prompt} className="max-h-[480px] rounded-xl" />
                   ) : phase === "failed" || phase === "cancelled" ? (
-                    <button onClick={() => onSubmit(lastParams ?? undefined)} className="text-xs px-3 py-1.5 rounded-md border border-border/60 hover:bg-surface-hover">
-                      {phase === "cancelled" ? "Retry with same settings" : "Retry"}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button onClick={openRetryDialog} className="text-xs px-3 py-1.5 rounded-md border border-border/60 hover:bg-surface-hover">
+                        Retry…
+                      </button>
+                      {phase === "cancelled" && lastParams && (
+                        <button onClick={() => onSubmit(lastParams)} className="text-xs px-3 py-1.5 rounded-md bg-brand text-white hover:opacity-90">
+                          Retry with same settings
+                        </button>
+                      )}
+                    </div>
                   ) : (
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <Loader2 className="size-6 animate-spin text-brand" />
