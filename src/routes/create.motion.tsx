@@ -281,11 +281,18 @@ function MotionCreate() {
 
         {/* Floating Generate Bar */}
         <div className="absolute bottom-6 left-6 right-6 pointer-events-none">
-          <div className="pointer-events-auto max-w-[680px] mx-auto">
+          <div className="pointer-events-auto max-w-[680px] mx-auto space-y-2">
+            {blockReason && !busy && (
+              <div className="text-center text-[11.5px] text-amber-300/90 bg-amber-500/10 border border-amber-500/20 rounded-lg py-1.5 px-3">
+                {blockReason}
+              </div>
+            )}
             <button
-              disabled={!canGenerate}
+              disabled={busy}
               onClick={onGenerate}
-              className="w-full h-12 rounded-2xl bg-[image:var(--gradient-brand)] text-brand-foreground text-[14px] font-semibold shadow-[var(--shadow-glow)] hover:opacity-95 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              aria-disabled={!canGenerate}
+              title={blockReason ?? undefined}
+              className="w-full h-12 rounded-2xl bg-[image:var(--gradient-brand)] text-brand-foreground text-[14px] font-semibold shadow-[var(--shadow-glow)] hover:opacity-95 transition disabled:opacity-50 disabled:cursor-not-allowed aria-disabled:opacity-60 flex items-center justify-center gap-2"
             >
               {busy ? (
                 <><Loader2 className="size-4 animate-spin" /> {phase === "uploading" ? "Uploading..." : "Generating..."}</>
@@ -295,6 +302,7 @@ function MotionCreate() {
             </button>
           </div>
         </div>
+
       </div>
     </AppShell>
   );
