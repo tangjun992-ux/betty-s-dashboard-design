@@ -34,7 +34,7 @@ export function ModelPicker<T extends AnyModel>({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
                     <span className="text-[13px] font-medium">{m.label}</span>
-                    {m.badge && (
+                    {"badge" in m && m.badge && (
                       <span className="text-[9.5px] px-1.5 py-0.5 rounded-sm bg-brand/15 text-brand uppercase tracking-wide">
                         {m.badge}
                       </span>
