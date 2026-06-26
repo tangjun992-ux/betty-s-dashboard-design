@@ -1,14 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Image as ImageIcon, Zap, LayoutPanelTop, Box, Smartphone,
-  Gem, Hash, SlidersHorizontal, Coins, ImagePlus, Loader2,
+  Image as ImageIcon, Zap, LayoutPanelTop, Box, Coins, ImagePlus, Loader2,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { CreateHub, Composer } from "@/components/create/CreateHub";
-import { ModelPicker, ChoicePill } from "@/components/create/ModelPicker";
+import { ImageModelPicker } from "@/components/create/ImageModelPicker";
+import { ImageResolutionPopover, ImageBatchPopover } from "@/components/create/ImageOptionPopovers";
+import { AspectPopover, MorePopover, type AdvancedOptions } from "@/components/create/VideoOptionPopovers";
 import { generateImage } from "@/lib/generations.functions";
 import { IMAGE_MODELS, type Aspect, type ImageQuality } from "@/lib/model-registry";
 import { useSession } from "@/lib/use-session";
@@ -23,30 +24,34 @@ export const Route = createFileRoute("/create/image")({
   component: ImagePage,
 });
 
+const DEFAULT_MODEL = IMAGE_MODELS.find((m) => m.key === "gpt-image-2") ?? IMAGE_MODELS[0];
+
 function ImagePage() {
   const navigate = useNavigate();
   const { user, loading } = useSession();
   const [prompt, setPrompt] = useState("");
-  const [model, setModel] = useState(IMAGE_MODELS[0]);
-  const [aspect, setAspect] = useState<Aspect>(model.aspects[0]);
-  const [quality, setQuality] = useState<ImageQuality>(model.qualities[model.qualities.length - 1]);
+  const [model, setModel] = useState(DEFAULT_MODEL);
+  const [aspect, setAspect] = useState<Aspect>(model.aspects.includes("9:16") ? "9:16" : model.aspects[0]);
+  const [quality, setQuality] = useState<ImageQuality>(
+    model.qualities.includes("2K") ? "2K" : model.qualities[model.qualities.length - 1],
+  );
   const [batch, setBatch] = useState(1);
+  const [advanced, setAdvanced] = useState<AdvancedOptions>({
+    clearOnSubmit: true, fallbackModels: true, autoRetries: true,
+  });
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const gen = useServerFn(generateImage);
 
-  // Coerce dependent params when model changes
   useEffect(() => {
-    if (!model.aspects.includes(aspect)) setAspect(model.aspects[0]);
-    if (!model.qualities.includes(quality)) setQuality(model.qualities[model.qualities.length - 1]);
+    if (!model.aspects.includes(aspect)) setAspect(model.aspects.includes("9:16") ? "9:16" : model.aspects[0]);
+    if (!model.qualities.includes(quality)) {
+      setQuality(model.qualities.includes("2K") ? "2K" : model.qualities[model.qualities.length - 1]);
+    }
     if (batch > model.maxBatch) setBatch(model.maxBatch);
   }, [model]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const totalCost = useMemo(() => model.cost * batch, [model, batch]);
-  const batchOptions = useMemo(
-    () => Array.from({ length: model.maxBatch }, (_, i) => i + 1),
-    [model],
-  );
 
   async function onSubmit() {
     if (!user) { navigate({ to: "/auth" }); return; }
@@ -56,6 +61,7 @@ function ImagePage() {
     try {
       const res = await gen({ data: { prompt: prompt.trim(), model: model.id, aspect, quality, batch } });
       setResult(res.url);
+      if (advanced.clearOnSubmit) setPrompt("");
       toast.success("Image ready", { id: t });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Generation failed", { id: t });
@@ -87,13 +93,12 @@ function ImagePage() {
               }
               options={
                 <>
-                  <ModelPicker models={IMAGE_MODELS} value={model} onChange={setModel} />
-                  <ChoicePill icon={Smartphone} options={model.aspects} value={aspect} onChange={setAspect} />
-                  <ChoicePill icon={Gem} options={model.qualities} value={quality} onChange={setQuality} />
-                  <ChoicePill icon={Hash} options={batchOptions} value={batch} onChange={setBatch} format={(v) => `×${v}`} />
-                  <span className="flex items-center gap-1 h-7 px-2 rounded-md text-[12px] text-muted-foreground/70">
-                    <SlidersHorizontal className="size-3.5" />More
-                  </span>
+                  <ImageModelPicker value={model} onChange={setModel} />
+                  <span className="text-muted-foreground/30">·</span>
+                  <AspectPopover options={model.aspects} value={aspect} onChange={setAspect} />
+                  <ImageResolutionPopover options={model.qualities} value={quality} onChange={setQuality} />
+                  <ImageBatchPopover max={model.maxBatch} value={batch} onChange={setBatch} />
+                  <MorePopover value={advanced} onChange={setAdvanced} />
                   <div className="ml-auto flex items-center gap-1.5 text-foreground pr-1">
                     <Coins className="size-3.5 text-amber-400" />
                     <span className="text-[12px] font-medium tabular-nums">{totalCost}</span>

@@ -30,15 +30,10 @@ export function ModelPicker<T extends AnyModel>({
                 onClick={() => { onChange(m); setOpen(false); }}
                 className={`flex items-start gap-2.5 rounded-md px-2 py-2 text-left hover:bg-surface-hover ${active ? "bg-surface-hover" : ""}`}
               >
-                <span className={`mt-1 size-3 rounded-full bg-gradient-to-br ${m.swatch}`} />
+                <span className={`mt-1 size-3 rounded-full bg-gradient-to-br ${m.swatch ?? "from-zinc-400 to-zinc-600"}`} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
                     <span className="text-[13px] font-medium">{m.label}</span>
-                    {"badge" in m && m.badge && (
-                      <span className="text-[9.5px] px-1.5 py-0.5 rounded-sm bg-brand/15 text-brand uppercase tracking-wide">
-                        {m.badge}
-                      </span>
-                    )}
                   </div>
                   <p className="text-[11.5px] text-muted-foreground leading-snug mt-0.5">{m.description}</p>
                 </div>
