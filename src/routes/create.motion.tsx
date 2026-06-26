@@ -86,6 +86,14 @@ function MotionCreate() {
   }
 
   async function onGenerate() {
+    if (!user) {
+      toast.message("Sign in to generate motion videos", {
+        id: "motion",
+        action: { label: "Sign in", onClick: () => navigate({ to: "/auth" }) },
+      });
+      navigate({ to: "/auth" });
+      return;
+    }
     if (!canGenerate || !video || !character) return;
     setError(null);
     setOutput(null);
