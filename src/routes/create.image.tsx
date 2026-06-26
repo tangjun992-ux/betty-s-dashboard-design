@@ -144,16 +144,43 @@ function ImagePage() {
                 </>
               }
             />
-            {(busy || result) && (
-              <div className="mt-4 rounded-2xl border border-border/60 bg-surface/70 p-4 min-h-[200px] grid place-items-center">
-                {busy && !result ? (
-                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                    <Loader2 className="size-6 animate-spin text-brand" />
-                    <p className="text-xs">Painting pixels with {model.label}…</p>
+            {(phase !== "idle" || result) && (
+              <div className="mt-4 rounded-2xl border border-border/60 bg-surface/70 p-4">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div className="flex items-center gap-2 text-xs">
+                    {phase === "queued" && <><Clock className="size-3.5 text-muted-foreground" /><span className="text-muted-foreground">Queued · waiting for {model.label}</span></>}
+                    {phase === "running" && <><Loader2 className="size-3.5 animate-spin text-brand" /><span>Running · {model.label}</span></>}
+                    {phase === "finalizing" && <><Loader2 className="size-3.5 animate-spin text-brand" /><span>Finalizing & saving…</span></>}
+                    {phase === "completed" && <><CheckCircle2 className="size-3.5 text-emerald-400" /><span className="text-emerald-300">Completed</span></>}
+                    {phase === "failed" && <><XCircle className="size-3.5 text-red-400" /><span className="text-red-300">{errMsg}</span></>}
                   </div>
-                ) : result ? (
-                  <img src={result} alt={prompt} className="max-h-[480px] rounded-xl" />
-                ) : null}
+                  <div className="flex items-center gap-3 text-[11px] text-muted-foreground tabular-nums">
+                    <span>{elapsed.toFixed(1)}s</span>
+                    <span>{Math.round(progress)}%</span>
+                  </div>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-hover">
+                  <div
+                    className={`h-full rounded-full transition-[width] duration-200 ease-out ${
+                      phase === "failed" ? "bg-red-500"
+                      : phase === "completed" ? "bg-emerald-500"
+                      : "bg-gradient-to-r from-brand to-pink-500"
+                    } ${phase === "queued" || phase === "running" ? "animate-pulse" : ""}`}
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <div className="mt-4 min-h-[180px] grid place-items-center">
+                  {result ? (
+                    <img src={result} alt={prompt} className="max-h-[480px] rounded-xl" />
+                  ) : phase === "failed" ? (
+                    <button onClick={onSubmit} className="text-xs px-3 py-1.5 rounded-md border border-border/60 hover:bg-surface-hover">Retry</button>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                      <Loader2 className="size-6 animate-spin text-brand" />
+                      <p className="text-xs">Painting pixels with {model.label}…</p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </>
