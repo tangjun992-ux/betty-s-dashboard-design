@@ -306,6 +306,93 @@ function ImagePage() {
           { image: bannerInfluencers, title: "Party Influencers", tag: "App" },
         ]}
       />
+      <Dialog open={retryOpen} onOpenChange={setRetryOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Retry with new settings</DialogTitle>
+            <DialogDescription>Tweak the prompt or parameters before resubmitting.</DialogDescription>
+          </DialogHeader>
+          {retryDraft && (
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs text-muted-foreground mb-1.5 block">Prompt</label>
+                <Textarea
+                  value={retryDraft.prompt}
+                  onChange={(e) => setRetryDraft({ ...retryDraft, prompt: e.target.value })}
+                  rows={4}
+                  className="resize-none"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1.5 block">Model</label>
+                <select
+                  value={retryDraft.model.key}
+                  onChange={(e) => {
+                    const m = IMAGE_MODELS.find((x) => x.key === e.target.value) ?? retryDraft.model;
+                    setRetryDraft({
+                      ...retryDraft,
+                      model: m,
+                      aspect: m.aspects.includes(retryDraft.aspect) ? retryDraft.aspect : m.aspects[0],
+                      quality: m.qualities.includes(retryDraft.quality) ? retryDraft.quality : m.qualities[m.qualities.length - 1],
+                      batch: Math.min(retryDraft.batch, m.maxBatch),
+                    });
+                  }}
+                  className="w-full h-9 rounded-md border border-border/60 bg-surface px-2 text-sm"
+                >
+                  {IMAGE_MODELS.map((m) => (
+                    <option key={m.key} value={m.key}>{m.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1.5 block">Aspect</label>
+                  <select
+                    value={retryDraft.aspect}
+                    onChange={(e) => setRetryDraft({ ...retryDraft, aspect: e.target.value as Aspect })}
+                    className="w-full h-9 rounded-md border border-border/60 bg-surface px-2 text-sm"
+                  >
+                    {retryDraft.model.aspects.map((a) => <option key={a} value={a}>{a}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1.5 block">Quality</label>
+                  <select
+                    value={retryDraft.quality}
+                    onChange={(e) => setRetryDraft({ ...retryDraft, quality: e.target.value as ImageQuality })}
+                    className="w-full h-9 rounded-md border border-border/60 bg-surface px-2 text-sm"
+                  >
+                    {retryDraft.model.qualities.map((q) => <option key={q} value={q}>{q}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1.5 block">Batch</label>
+                  <select
+                    value={retryDraft.batch}
+                    onChange={(e) => setRetryDraft({ ...retryDraft, batch: Number(e.target.value) })}
+                    className="w-full h-9 rounded-md border border-border/60 bg-surface px-2 text-sm"
+                  >
+                    {Array.from({ length: retryDraft.model.maxBatch }, (_, i) => i + 1).map((n) => (
+                      <option key={n} value={n}>{n}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>Estimated cost</span>
+                <span className="inline-flex items-center gap-1 text-foreground">
+                  <Coins className="size-3.5 text-amber-400" />
+                  <span className="tabular-nums">{retryDraft.model.cost * retryDraft.batch}</span>
+                </span>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRetryOpen(false)}>Cancel</Button>
+            <Button onClick={submitRetry} disabled={!retryDraft?.prompt.trim()}>Generate</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }
