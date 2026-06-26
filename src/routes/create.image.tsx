@@ -107,24 +107,41 @@ function ImagePage() {
 
   const totalCost = useMemo(() => model.cost * batch, [model, batch]);
 
-  async function onSubmit() {
+  async function onSubmit(paramsToUse?: typeof lastParams) {
     if (!user) { navigate({ to: "/auth" }); return; }
-    if (!prompt.trim() || busy) return;
+    
+    const activePrompt = paramsToUse ? paramsToUse.prompt : prompt;
+    const activeModel = paramsToUse ? paramsToUse.model : model;
+    const activeAspect = paramsToUse ? paramsToUse.aspect : aspect;
+    const activeQuality = paramsToUse ? paramsToUse.quality : quality;
+    const activeBatch = paramsToUse ? paramsToUse.batch : batch;
+
+    if (!activePrompt.trim() || busy) return;
     setBusy(true); setResult(null);
+    
+    // Save these parameters as the last used parameters
+    setLastParams({
+      prompt: activePrompt,
+      model: activeModel,
+      aspect: activeAspect,
+      quality: activeQuality,
+      batch: activeBatch
+    });
+
     startProgress();
     const controller = new AbortController();
     abortRef.current = controller;
-    const t = toast.loading(`Queued · ${model.label}`);
+    const t = toast.loading(`Queued · ${activeModel.label}`);
     try {
-      toast.loading(`Generating with ${model.label}…`, { id: t });
+      toast.loading(`Generating with ${activeModel.label}…`, { id: t });
       const res = await gen({
-        data: { prompt: prompt.trim(), model: model.id, aspect, quality, batch },
+        data: { prompt: activePrompt.trim(), model: activeModel.id, aspect: activeAspect, quality: activeQuality, batch: activeBatch },
         signal: controller.signal,
       });
       if (controller.signal.aborted) { toast.dismiss(t); return; }
       setResult(res.url);
       endProgress("ok");
-      if (advanced.clearOnSubmit) setPrompt("");
+      if (advanced.clearOnSubmit && !paramsToUse) setPrompt("");
       toast.success("Image ready", { id: t });
     } catch (err) {
       if (controller.signal.aborted) {
