@@ -8,9 +8,11 @@ import type { Aspect, VideoResolution } from "@/lib/model-registry";
 const ASPECT_META: Record<Aspect, { icon: typeof Monitor; orient: "landscape" | "portrait" | "square" }> = {
   "21:9": { icon: Monitor, orient: "landscape" },
   "16:9": { icon: Monitor, orient: "landscape" },
+  "3:2":  { icon: Monitor, orient: "landscape" },
   "4:3":  { icon: Tablet,  orient: "landscape" },
   "1:1":  { icon: Tablet,  orient: "square" },
   "3:4":  { icon: Smartphone, orient: "portrait" },
+  "2:3":  { icon: Smartphone, orient: "portrait" },
   "4:5":  { icon: Smartphone, orient: "portrait" },
   "9:16": { icon: Smartphone, orient: "portrait" },
 };
