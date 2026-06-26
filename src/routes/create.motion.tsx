@@ -53,8 +53,9 @@ function MotionCreate() {
   const charRef = useRef<HTMLInputElement>(null);
   const pollRef = useRef<number | null>(null);
 
+  const navigate = useNavigate();
   const cost = mode === "Pro" ? 120 : 80;
-  const canGenerate = !!video && !!character && !!user && phase !== "uploading" && phase !== "queued" && phase !== "running";
+  const canGenerate = !!video && !!character && phase !== "uploading" && phase !== "queued" && phase !== "running";
   const busy = phase === "uploading" || phase === "queued" || phase === "running";
 
   // Load history
