@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -53,8 +53,9 @@ function MotionCreate() {
   const charRef = useRef<HTMLInputElement>(null);
   const pollRef = useRef<number | null>(null);
 
+  const navigate = useNavigate();
   const cost = mode === "Pro" ? 120 : 80;
-  const canGenerate = !!video && !!character && !!user && phase !== "uploading" && phase !== "queued" && phase !== "running";
+  const canGenerate = !!video && !!character && phase !== "uploading" && phase !== "queued" && phase !== "running";
   const busy = phase === "uploading" || phase === "queued" || phase === "running";
 
   // Load history
@@ -85,6 +86,14 @@ function MotionCreate() {
   }
 
   async function onGenerate() {
+    if (!user) {
+      toast.message("Sign in to generate motion videos", {
+        id: "motion",
+        action: { label: "Sign in", onClick: () => navigate({ to: "/auth" }) },
+      });
+      navigate({ to: "/auth" });
+      return;
+    }
     if (!canGenerate || !video || !character) return;
     setError(null);
     setOutput(null);
