@@ -50,6 +50,13 @@ function ImagePage() {
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const gen = useServerFn(generateImage);
+  const [lastParams, setLastParams] = useState<{
+    prompt: string;
+    model: typeof DEFAULT_MODEL;
+    aspect: Aspect;
+    quality: ImageQuality;
+    batch: number;
+  } | null>(null);
 
   useEffect(() => () => {
     if (tickRef.current) clearInterval(tickRef.current);
