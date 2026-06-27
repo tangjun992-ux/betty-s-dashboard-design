@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { consumeCredits } from "./credits.server";
+import { consumeCredits, refundCredits } from "./credits.server";
 
 const MotionInput = z.object({
   videoPath: z.string().min(1),
@@ -22,13 +22,7 @@ export const generateMotion = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
 
     const cost = data.mode === "Pro" ? 120 : 80;
-    const { data: prof } = await supabase
-      .from("profiles").select("credits").eq("id", userId).maybeSingle();
-    if (!prof || prof.credits < cost) {
-      throw new Error(`Need ${cost} credits to generate motion video.`);
-    }
 
-    // Verify paths are under user's folder
     if (!data.videoPath.startsWith(`${userId}/`) || !data.imagePath.startsWith(`${userId}/`)) {
       throw new Error("Invalid file path");
     }
@@ -52,42 +46,42 @@ export const generateMotion = createServerFn({ method: "POST" })
       }).select("id").single();
     if (insErr || !row) throw new Error(insErr?.message ?? "Failed to start motion job");
 
-    const submit = await fetch(`https://queue.fal.run/${MOTION_MODEL}`, {
-      method: "POST",
-      headers: { Authorization: `Key ${falKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        image_url: imageUrl,
-        video_url: videoUrl,
-        prompt: data.prompt || undefined,
-      }),
-    });
-    if (!submit.ok) {
-      const text = await submit.text();
-      await supabase.from("generations").update({
-        status: "failed", error: text.slice(0, 300),
-      }).eq("id", row.id);
-      throw new Error(`Motion provider error (${submit.status}): ${text.slice(0, 200)}`);
-    }
-    const submitJson = await submit.json() as { request_id?: string };
-    const requestId = submitJson.request_id;
-    if (!requestId) {
-      await supabase.from("generations").update({ status: "failed", error: "no request_id" }).eq("id", row.id);
-      throw new Error("Motion provider did not return a request id");
-    }
-
+    // Atomic: charge first, refund on downstream failure.
     await consumeCredits(supabase, {
       userId, amount: cost, reason: "motion", refId: row.id, idem: `motion:${row.id}`,
     });
 
-    await supabase.from("generations").update({
-      status: "running",
-      params: {
-        orientation: data.orientation, mode: data.mode,
-        request_id: requestId, provider: "fal", model_path: MOTION_MODEL, cost,
-      },
-    }).eq("id", row.id);
+    try {
+      const submit = await fetch(`https://queue.fal.run/${MOTION_MODEL}`, {
+        method: "POST",
+        headers: { Authorization: `Key ${falKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ image_url: imageUrl, video_url: videoUrl, prompt: data.prompt || undefined }),
+      });
+      if (!submit.ok) {
+        const text = await submit.text();
+        throw new Error(`Motion provider error (${submit.status}): ${text.slice(0, 200)}`);
+      }
+      const submitJson = await submit.json() as { request_id?: string };
+      const requestId = submitJson.request_id;
+      if (!requestId) throw new Error("Motion provider did not return a request id");
 
-    return { id: row.id, cost };
+      await supabase.from("generations").update({
+        status: "running",
+        params: {
+          orientation: data.orientation, mode: data.mode,
+          request_id: requestId, provider: "fal", model_path: MOTION_MODEL, cost,
+        },
+      }).eq("id", row.id);
+
+      return { id: row.id, cost };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "submission failed";
+      await refundCredits(supabase, {
+        userId, amount: cost, reason: "motion:refund", refId: row.id, idem: `motion:refund:${row.id}`,
+      });
+      await supabase.from("generations").update({ status: "failed", error: msg.slice(0, 300) }).eq("id", row.id);
+      throw err;
+    }
   });
 
 export const listMyMotion = createServerFn({ method: "GET" })
