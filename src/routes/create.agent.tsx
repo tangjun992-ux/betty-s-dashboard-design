@@ -2,10 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import {
   Sparkles, Plus, Settings2, Feather, Sun, Wand2, FileText, MessagesSquare,
-  Lightbulb, Music,
+  Lightbulb, Music, ImagePlus, Upload,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { CreateHub, Composer, OptionPill } from "@/components/create/CreateHub";
+import { AssistantSettings } from "@/components/create/AssistantSettings";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import bannerInfluencers from "@/assets/banner-influencers.jpg";
 import bannerTutorial from "@/assets/banner-tutorial.jpg";
 import toolSeedance from "@/assets/tool-seedance.jpg";
@@ -19,6 +21,7 @@ export const Route = createFileRoute("/create/agent")({
 
 function AgentPage() {
   const [input, setInput] = useState("");
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
     <AppShell>
@@ -37,10 +40,34 @@ function AgentPage() {
             onChange={setInput}
             leading={
               <div className="flex flex-col gap-1.5">
-                <button className="size-8 grid place-items-center rounded-md hover:bg-surface-hover text-muted-foreground" aria-label="Attach">
-                  <Plus className="size-4" />
-                </button>
-                <button className="size-8 grid place-items-center rounded-md hover:bg-surface-hover text-muted-foreground" aria-label="Settings">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className="size-8 grid place-items-center rounded-md hover:bg-surface-hover text-muted-foreground" aria-label="Attach">
+                      <Plus className="size-4" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    side="top"
+                    align="start"
+                    sideOffset={8}
+                    className="w-[200px] p-1.5 rounded-xl bg-[#101013] border-border/60 shadow-2xl"
+                  >
+                    <button className="w-full flex items-center gap-3 h-10 px-3 rounded-lg text-[13.5px] text-foreground hover:bg-surface-hover transition-colors">
+                      <ImagePlus className="size-4 text-muted-foreground" />
+                      Select Media
+                    </button>
+                    <label className="w-full flex items-center gap-3 h-10 px-3 rounded-lg text-[13.5px] text-foreground hover:bg-surface-hover transition-colors cursor-pointer">
+                      <Upload className="size-4 text-muted-foreground" />
+                      Upload File
+                      <input type="file" hidden />
+                    </label>
+                  </PopoverContent>
+                </Popover>
+                <button
+                  onClick={() => setSettingsOpen(true)}
+                  className="size-8 grid place-items-center rounded-md hover:bg-surface-hover text-muted-foreground"
+                  aria-label="Assistant Settings"
+                >
                   <Settings2 className="size-4" />
                 </button>
               </div>
@@ -63,7 +90,7 @@ function AgentPage() {
           { image: toolVideogen, title: "Cat in the Window", tag: "Agent" },
         ]}
       />
-      {/* Sparkles import retained for icon reuse */}
+      <AssistantSettings open={settingsOpen} onOpenChange={setSettingsOpen} />
       <span className="hidden"><Sparkles /></span>
     </AppShell>
   );
