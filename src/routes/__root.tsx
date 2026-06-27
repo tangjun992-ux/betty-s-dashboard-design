@@ -138,10 +138,19 @@ function RootComponent() {
   const router = useRouter();
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+    initAnalytics();
+  }, []);
+
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       router.invalidate();
-      if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
+      if (event === "SIGNED_OUT") {
+        resetAnalytics();
+      } else {
+        queryClient.invalidateQueries();
+        if (session?.user) identify(session.user.id, { email: session.user.email });
+      }
     });
     return () => sub.subscription.unsubscribe();
   }, [router, queryClient]);
