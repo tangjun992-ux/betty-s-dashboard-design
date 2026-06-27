@@ -7,9 +7,44 @@ const VideoInput = z.object({
   prompt: z.string().min(2).max(2000),
   model: z.string().default(VIDEO_MODELS[0].id),
   aspect: z.string().default("9:16"),
-  duration: z.number().int().min(3).max(15).default(5),
+  duration: z.number().int().min(1).max(15).default(5),
   resolution: z.enum(["480p", "720p", "1080p"]).default("720p"),
+  startFrameUrl: z.string().url().optional(),
+  endFrameUrl: z.string().url().optional(),
 });
+
+// Upload a reference frame (start/end) to Supabase storage and return a
+// short-lived signed URL the fal provider can fetch.
+const FrameInput = z.object({
+  filename: z.string().min(1).max(200),
+  contentType: z.string().min(1),
+  dataBase64: z.string().min(10),
+});
+
+export const uploadVideoFrame = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => FrameInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    if (!/^image\//.test(data.contentType)) throw new Error("Frame must be an image");
+    const bytes = Uint8Array.from(atob(data.dataBase64), (c) => c.charCodeAt(0));
+    if (bytes.byteLength > 10 * 1024 * 1024) throw new Error("Frame must be ≤ 10MB");
+    const ext = data.filename.includes(".") ? data.filename.split(".").pop() : "png";
+    const path = `${userId}/frames/${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from("generations")
+      .upload(path, bytes, { contentType: data.contentType, upsert: false });
+    if (error) throw new Error(error.message);
+    const { data: signed } = await supabase.storage.from("generations")
+      .createSignedUrl(path, 60 * 60 * 2);
+    if (!signed?.signedUrl) throw new Error("Failed to sign frame URL");
+    return { url: signed.signedUrl };
+  });
+
+// Map a text-to-video model path to its image-to-video sibling when the
+// caller supplies a start frame. Falls back to the original path.
+function toI2VPath(modelPath: string): string {
+  return modelPath.replace("/text-to-video", "/image-to-video");
+}
 
 export const generateVideo = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -30,6 +65,12 @@ export const generateVideo = createServerFn({ method: "POST" })
     if (!model.resolutions.includes(data.resolution)) {
       throw new Error(`${model.label} doesn't support ${data.resolution}`);
     }
+    if (data.startFrameUrl && !model.supportsStartFrame) {
+      throw new Error(`${model.label} doesn't support start frames`);
+    }
+    if (data.endFrameUrl && !model.supportsEndFrame) {
+      throw new Error(`${model.label} doesn't support end frames`);
+    }
 
     const cost = model.cost(data.duration, data.resolution);
 
@@ -39,6 +80,9 @@ export const generateVideo = createServerFn({ method: "POST" })
       throw new Error(`Need ${cost} credits to generate this video.`);
     }
 
+    const useI2V = Boolean(data.startFrameUrl);
+    const modelPath = useI2V ? toI2VPath(data.model) : data.model;
+
     const { data: row, error: insErr } = await supabase
       .from("generations")
       .insert({
@@ -46,7 +90,11 @@ export const generateVideo = createServerFn({ method: "POST" })
         kind: "video",
         model: data.model,
         prompt: data.prompt,
-        params: { aspect: data.aspect, duration: data.duration, resolution: data.resolution },
+        params: {
+          aspect: data.aspect, duration: data.duration, resolution: data.resolution,
+          start_frame_url: data.startFrameUrl ?? null,
+          end_frame_url: data.endFrameUrl ?? null,
+        },
         status: "queued",
       })
       .select("id").single();
@@ -58,15 +106,19 @@ export const generateVideo = createServerFn({ method: "POST" })
       aspect_ratio: data.aspect,
       duration: String(data.duration),
     };
-    if (model.vendor === "ByteDance") {
+    if (model.vendor === "ByteDance" || model.vendor === "MiniMax") {
       body.resolution = data.resolution;
-    } else if (model.vendor === "MiniMax") {
-      body.resolution = data.resolution;
-    } else if (model.vendor === "Kling") {
-      body.duration = String(data.duration);
+    }
+    if (useI2V && data.startFrameUrl) {
+      body.image_url = data.startFrameUrl;
+    }
+    if (data.endFrameUrl) {
+      // Kling uses tail_image_url; Seedance Pro uses end_image_url.
+      if (model.vendor === "Kling") body.tail_image_url = data.endFrameUrl;
+      else body.end_image_url = data.endFrameUrl;
     }
 
-    const submit = await fetch(`https://queue.fal.run/${data.model}`, {
+    const submit = await fetch(`https://queue.fal.run/${modelPath}`, {
       method: "POST",
       headers: { Authorization: `Key ${falKey}`, "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -90,8 +142,12 @@ export const generateVideo = createServerFn({ method: "POST" })
 
     await supabase.from("generations").update({
       status: "running",
-      params: { aspect: data.aspect, duration: data.duration, resolution: data.resolution,
-                request_id: requestId, provider: "fal", model_path: data.model, cost },
+      params: {
+        aspect: data.aspect, duration: data.duration, resolution: data.resolution,
+        start_frame_url: data.startFrameUrl ?? null,
+        end_frame_url: data.endFrameUrl ?? null,
+        request_id: requestId, provider: "fal", model_path: modelPath, cost,
+      },
     }).eq("id", row.id);
 
     return { id: row.id, requestId, cost };
