@@ -45,10 +45,10 @@ export function AppSidebar() {
       >
         <div className={`flex items-center ${collapsed ? "justify-center" : "justify-between"} px-3 h-14`}>
           {!collapsed && (
-            <Link to="/" className="flex items-center gap-1.5">
-              <div className="size-5 rounded-md bg-surface-hover border border-border grid place-items-center text-[10px] font-bold text-foreground">
+            <Link to="/" className="flex items-center gap-2">
+              <span className="size-6 rounded-lg grid place-items-center text-[11px] font-bold text-brand-foreground shadow-[0_4px_12px_-4px_var(--brand)]" style={{ background: "var(--gradient-brand)" }}>
                 b
-              </div>
+              </span>
               <span className="text-[15px] font-semibold tracking-tight lowercase">betty</span>
             </Link>
           )}
