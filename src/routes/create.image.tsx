@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/use-session";
+import { track } from "@/lib/analytics";
 import toolHeadshot from "@/assets/tool-headshot.jpg";
 import toolSeedance from "@/assets/tool-seedance.jpg";
 import toolProduct from "@/assets/tool-product.jpg";
