@@ -127,6 +127,8 @@ function AgentPage() {
 
   return (
     <AppShell>
+      <div className="flex min-h-full">
+      <div className="flex-1 min-w-0">
       {messages.length === 0 ? (
         <CreateHub
           title="What do you want to create?"
