@@ -77,8 +77,8 @@ function AgentPage() {
             }
             options={
               <>
-                <OptionPill icon={Wand2} value="Prompt mode" />
-                <OptionPill icon={Sun} value="Sonnet 4.6" />
+                <ModePill mode={mode} onChange={setMode} />
+                <ModelPill model={model} onChange={setModel} />
               </>
             }
           />
