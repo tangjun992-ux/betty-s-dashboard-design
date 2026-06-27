@@ -18,6 +18,7 @@ import { AppShell } from "@/components/AppShell";
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { ToolPill } from "@/components/dashboard/ToolPill";
 import { MediaCard } from "@/components/dashboard/MediaCard";
+import { HomeComposer } from "@/components/dashboard/HomeComposer";
 
 import bannerEarn from "@/assets/banner-earn.jpg";
 import bannerInfluencers from "@/assets/banner-influencers.jpg";
@@ -86,8 +87,11 @@ const creatorExamples = [
 function Dashboard() {
   return (
     <AppShell>
-      <div className="pt-4 pb-12 space-y-10">
-        {/* Banner carousel — flush to top, peeks next slide */}
+      <div className="pt-6 pb-14 space-y-12">
+        {/* Home mini-composer */}
+        <HomeComposer />
+
+        {/* Banner carousel — peeks next slide */}
         <section>
           <div className="flex gap-5 overflow-x-auto scrollbar-hide pl-6 lg:pl-8 pr-6 lg:pr-8 pb-1">
             {banners.map((b) => (
@@ -104,33 +108,33 @@ function Dashboard() {
           </div>
         </section>
 
-        <div className="px-6 lg:px-8 space-y-10">
+        <div className="px-6 lg:px-8 space-y-12">
           <section>
-            <SectionHeader icon={Bookmark} title="Popular Tools" />
-            <div className="flex flex-wrap gap-x-10 gap-y-4">
+            <SectionHeader icon={Bookmark} title="Popular Tools" showArrows={false} />
+            <div className="flex flex-wrap gap-x-3 gap-y-3">
               {popularTools.map((t) => <ToolPill key={t.label} {...t} />)}
             </div>
           </section>
 
           <section>
             <SectionHeader icon={Film} title="Video Tools" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
               {videoTools.map((t) => <MediaCard key={t.title} {...t} />)}
             </div>
           </section>
 
           <section>
             <SectionHeader icon={Brush} title="Image Tools" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
               {imageTools.map((t) => <MediaCard key={t.title} {...t} />)}
             </div>
           </section>
 
           <section>
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-2">
-                <Wand2 className="size-4 text-muted-foreground" />
-                <h2 className="text-[15px] font-semibold">Creator Examples</h2>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2.5">
+                <Wand2 className="size-[18px] text-muted-foreground" />
+                <h2 className="text-[17px] font-semibold tracking-tight">Creator Examples</h2>
               </div>
               <div className="flex items-center gap-2">
                 <div className="flex p-0.5 rounded-lg bg-surface text-[13px]">
@@ -142,27 +146,45 @@ function Dashboard() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {creatorExamples.map((img, i) => (
-                <div key={i} className="group cursor-pointer">
-                  <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-surface">
-                    <img src={img} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-90" />
-                    <div className="absolute top-2 left-2">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-black/60 backdrop-blur text-white/90">
-                        {i % 3 === 0 ? "Seedance" : i % 3 === 1 ? "Kling" : "Agent"}
-                      </span>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
+              {creatorExamples.map((img, i) => {
+                const handles = ["mira", "kenji", "luna", "atlas", "nova", "rio"];
+                const handle = handles[i % handles.length];
+                const likes = 240 + ((i * 137) % 1800);
+                const remixes = 12 + ((i * 47) % 320);
+                return (
+                  <div key={i} className="group cursor-pointer">
+                    <div className="relative aspect-[3/4] rounded-xl overflow-hidden bg-surface">
+                      <img src={img} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-90" />
+                      <div className="absolute top-2 left-2">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-black/60 backdrop-blur text-white/90">
+                          {i % 3 === 0 ? "Seedance" : i % 3 === 1 ? "Kling" : "Agent"}
+                        </span>
+                      </div>
+                      <div className="absolute bottom-2 left-2 right-2 flex items-end justify-between gap-2">
+                        <Link
+                          to="/u/$handle"
+                          params={{ handle }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1.5 px-1.5 h-6 rounded-md bg-black/55 backdrop-blur-sm text-[11px] font-medium text-white/90 hover:text-white"
+                        >
+                          <span className="size-4 rounded-full bg-gradient-to-br from-sky-400 to-indigo-500 grid place-items-center text-[8px] font-bold uppercase">{handle[0]}</span>
+                          @{handle}
+                        </Link>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity text-[10.5px] font-medium text-white/90">
+                          <span className="inline-flex items-center gap-0.5 px-1.5 h-6 rounded-md bg-black/55 backdrop-blur-sm">♥ {likes >= 1000 ? `${(likes / 1000).toFixed(1)}k` : likes}</span>
+                          <span className="inline-flex items-center gap-0.5 px-1.5 h-6 rounded-md bg-black/55 backdrop-blur-sm">⟲ {remixes}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="absolute bottom-2 left-2 text-[11px] font-medium text-white/85">
-                      {i % 4 === 0 ? "1:00" : `0:${8 + (i % 3) * 5}`}
+                    <div className="mt-2 flex gap-1.5">
+                      <button className="flex-1 h-7 rounded-md bg-surface hover:bg-surface-hover text-[11px] font-medium">Recreate</button>
+                      <button className="flex-1 h-7 rounded-md bg-surface hover:bg-surface-hover text-[11px] font-medium text-muted-foreground">Reuse Inputs</button>
                     </div>
                   </div>
-                  <div className="mt-2 flex gap-1.5">
-                    <button className="flex-1 h-7 rounded-md bg-surface hover:bg-surface-hover text-[11px] font-medium">Recreate</button>
-                    <button className="flex-1 h-7 rounded-md bg-surface hover:bg-surface-hover text-[11px] font-medium text-muted-foreground">Reuse Inputs</button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         </div>
