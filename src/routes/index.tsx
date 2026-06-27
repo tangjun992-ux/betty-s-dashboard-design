@@ -18,7 +18,7 @@ import { AppShell } from "@/components/AppShell";
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { ToolPill } from "@/components/dashboard/ToolPill";
 import { MediaCard } from "@/components/dashboard/MediaCard";
-import { HomeComposer } from "@/components/dashboard/HomeComposer";
+
 
 import bannerEarn from "@/assets/banner-earn.jpg";
 import bannerInfluencers from "@/assets/banner-influencers.jpg";
@@ -88,8 +88,7 @@ function Dashboard() {
   return (
     <AppShell>
       <div className="pt-6 pb-14 space-y-12">
-        {/* Home mini-composer */}
-        <HomeComposer />
+
 
         {/* Banner carousel — peeks next slide */}
         <section>
