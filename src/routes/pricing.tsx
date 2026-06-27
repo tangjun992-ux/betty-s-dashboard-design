@@ -105,6 +105,7 @@ function PricingPage() {
     }
 
     setLoading(lookup);
+    track("checkout_open", { price_id: lookup });
     openCheckout({
       priceId: lookup,
       customerEmail: user.email ?? undefined,
