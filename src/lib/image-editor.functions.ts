@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { consumeCredits, refundCredits } from "./credits.server";
+import { enforceRateLimit } from "./rate-limit.server";
 
 const REMOVE_BG_MODEL = "fal-ai/birefnet/v2";
 const UPSCALE_MODEL = "fal-ai/clarity-upscaler";
