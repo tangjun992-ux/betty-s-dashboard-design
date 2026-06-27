@@ -175,11 +175,12 @@ function PopularPanel({
 }
 
 function YourMediaPanel({
-  cat, setCat, q, setQ, selected, setSelected,
+  cat, setCat, q, setQ, selected, setSelected, onContinue,
 }: {
   cat: Cat; setCat: (c: Cat) => void;
   q: string; setQ: (s: string) => void;
   selected: string | null; setSelected: (s: string | null) => void;
+  onContinue: (src: LipsyncSource) => void;
 }) {
   const { user, loading } = useSession();
   const fetcher = useServerFn(listMyGenerations);
