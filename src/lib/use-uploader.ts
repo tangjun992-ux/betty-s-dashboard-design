@@ -16,7 +16,7 @@ export type UploadItem = {
   generationId?: string;
 };
 
-type GenInsert = Database["public"]["Tables"]["generations"]["Insert"];
+type AssetInsert = Database["public"]["Tables"]["assets"]["Insert"];
 
 function kindOf(file: File): UploadItem["kind"] {
   if (file.type.startsWith("image/")) return "image";
@@ -115,28 +115,22 @@ export function useUploader() {
 
             update(it.id, { status: "saving", progress: 1, url: publicUrl });
 
-            const kindForDb: GenInsert["kind"] | null =
-              it.kind === "image" || it.kind === "video" || it.kind === "audio" ? it.kind : null;
+            const assetKind: AssetInsert["kind"] =
+              it.kind === "image" || it.kind === "video" || it.kind === "audio" ? it.kind : "other";
 
-            if (!kindForDb) {
-              update(it.id, { status: "done" });
-              continue;
-            }
-
-            const insert: GenInsert = {
+            const insert: AssetInsert = {
               user_id: user.id,
-              kind: kindForDb,
-              model: "upload",
-              prompt: it.file.name,
-              status: "succeeded",
-              asset_url: publicUrl,
-              thumb_url: kindForDb === "image" ? publicUrl : null,
-              is_public: false,
-              params: { source: "upload", size: it.size, mime: it.file.type } as GenInsert["params"],
+              kind: assetKind,
+              url: publicUrl,
+              thumb_url: assetKind === "image" ? publicUrl : null,
+              file_size: it.size,
+              mime_type: it.file.type,
+              source: "upload",
+              metadata: { original_name: it.file.name } as AssetInsert["metadata"],
             };
 
             const { data: row, error: insErr } = await supabase
-              .from("generations")
+              .from("assets")
               .insert(insert)
               .select("id")
               .single();
