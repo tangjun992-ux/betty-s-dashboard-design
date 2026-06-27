@@ -109,6 +109,8 @@ function Dashboard() {
         </section>
 
         <div className="px-6 lg:px-8 space-y-14">
+          <RecentGenerations />
+
           <section>
             <SectionHeader icon={Bookmark} title="Popular Tools" showArrows={false} />
             <div className="flex flex-wrap gap-x-3 gap-y-3">
