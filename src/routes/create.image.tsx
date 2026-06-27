@@ -24,8 +24,14 @@ import toolProduct from "@/assets/tool-product.jpg";
 import toolAvatar from "@/assets/tool-avatar.jpg";
 import bannerInfluencers from "@/assets/banner-influencers.jpg";
 
+type ImageSearch = { prompt?: string; model?: string; aspect?: string };
 export const Route = createFileRoute("/create/image")({
   head: () => ({ meta: [{ title: "Image — Betty" }] }),
+  validateSearch: (s: Record<string, unknown>): ImageSearch => ({
+    prompt: typeof s.prompt === "string" ? s.prompt : undefined,
+    model: typeof s.model === "string" ? s.model : undefined,
+    aspect: typeof s.aspect === "string" ? s.aspect : undefined,
+  }),
   component: ImagePage,
 });
 
