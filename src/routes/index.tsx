@@ -52,14 +52,14 @@ const banners = [
 ];
 
 const popularTools = [
-  { icon: Sparkles, label: "Agent", gradient: "from-violet-500 to-indigo-600", to: "/create/agent" },
-  { icon: ImageIcon, label: "Image", gradient: "from-sky-500 to-blue-600", to: "/create/image" },
-  { icon: Video, label: "Video", gradient: "from-blue-500 to-indigo-600", to: "/create/video" },
-  { icon: Mic2, label: "Lipsync", gradient: "from-cyan-500 to-sky-600", to: "/create/lipsync" },
-  { icon: Activity, label: "Motion Sync", gradient: "from-fuchsia-500 to-pink-600", to: "/create/motion" },
-  { icon: AudioLines, label: "Audio", gradient: "from-zinc-400 to-zinc-600", to: "/create/audio" },
-  { icon: ScanLine, label: "Extractor", gradient: "from-zinc-500 to-zinc-700", to: "/create/extract" },
-  { icon: Maximize2, label: "Upscaler", gradient: "from-amber-500 to-orange-600", to: "/create/upscale" },
+  { icon: Sparkles, label: "Agent", tone: "violet" as const, to: "/create/agent" },
+  { icon: ImageIcon, label: "Image", tone: "sky" as const, to: "/create/image" },
+  { icon: Video, label: "Video", tone: "blue" as const, to: "/create/video" },
+  { icon: Mic2, label: "Lipsync", tone: "cyan" as const, to: "/create/lipsync" },
+  { icon: Activity, label: "Motion Sync", tone: "fuchsia" as const, to: "/create/motion" },
+  { icon: AudioLines, label: "Audio", tone: "zinc" as const, to: "/create/audio" },
+  { icon: ScanLine, label: "Extractor", tone: "zinc" as const, to: "/create/extract" },
+  { icon: Maximize2, label: "Upscaler", tone: "amber" as const, to: "/create/upscale" },
 ];
 
 const videoTools = [
