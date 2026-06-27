@@ -45,6 +45,27 @@ type Card = {
   likes: number;
 };
 
+const MODEL_KEY: Record<string, string> = {
+  "GPT Image 2": "gpt-image-2",
+  "Nano Banana": "nano-banana",
+  "Flux 1.1": "flux-1-1",
+  "Seedance 2.0": "seedance-2",
+  "Kling 3.0": "kling-v2-1-master",
+  "Veo 3.1": "veo-3-1",
+};
+function promptFor(card: Card) {
+  return card.kind === "video"
+    ? `Cinematic ${card.model} render — slow dolly-in, dramatic rim lighting, 35mm, shallow depth of field`
+    : `Editorial ${card.model} render — high-detail portrait, dramatic rim lighting, magazine cover composition`;
+}
+function remixSearch(card: Card) {
+  return {
+    prompt: promptFor(card),
+    model: MODEL_KEY[card.model],
+    aspect: card.ratio === "9/16" ? "9:16" : card.ratio === "1/1" ? "1:1" : "16:9",
+  };
+}
+
 const pool: string[] = [
   toolSeedance, toolMotion, toolAvatar, toolVideogen, toolProduct, toolHeadshot,
   toolImagegen, bannerInfluencers, bannerTutorial, bannerEarn,
