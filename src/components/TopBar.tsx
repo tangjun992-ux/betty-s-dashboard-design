@@ -61,7 +61,7 @@ export function TopBar() {
         <SheetContent side="left" className="p-0 w-[260px] bg-background border-r border-border">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
           <div className="h-full overflow-y-auto">
-            <AppSidebar />
+            <AppSidebar forceShow />
           </div>
         </SheetContent>
       </Sheet>
