@@ -79,7 +79,7 @@ export function JobsTray() {
         } else if (r.status === "failed") {
           toast.error(`${label} failed`, {
             id: `job:${r.id}`,
-            description: (r.error ?? "").slice(0, 120) || "Credits were refunded.",
+            description: "Credits were refunded.",
           });
         }
       }
