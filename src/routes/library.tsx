@@ -52,6 +52,7 @@ type Item = PreviewItem & { like_count?: number | null; status?: string | null; 
 
 function LibraryPage() {
   const { user, loading } = useSession();
+  useRealtimeLibrary(user?.id);
   const [tab, setTab] = useState<Kind>("all");
   const [view, setView] = useState<View>("grid");
   const [query, setQuery] = useState("");
