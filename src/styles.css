@@ -33,7 +33,13 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-soft: var(--brand-soft);
   --color-brand-foreground: var(--brand-foreground);
+  --color-accent-cyan: var(--accent-cyan);
+  --color-accent-mint: var(--accent-mint);
+  --color-accent-amber: var(--accent-amber);
+  --color-accent-rose: var(--accent-rose);
 
   --font-display: "Geist", "Inter", system-ui, sans-serif;
   --font-sans: "Inter", "Geist", system-ui, sans-serif;
