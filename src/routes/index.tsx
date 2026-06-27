@@ -89,7 +89,7 @@ const creatorExamples = [
 function Dashboard() {
   return (
     <AppShell>
-      <div className="pt-6 pb-14 space-y-14">
+      <DashboardMotion><div className="pt-6 pb-14 space-y-14">
 
 
         {/* Banner carousel — peeks next slide */}
@@ -192,7 +192,7 @@ function Dashboard() {
             </div>
           </section>
         </div>
-      </div>
+      </div></DashboardMotion>
     </AppShell>
   );
 }
