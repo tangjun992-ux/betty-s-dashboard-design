@@ -1,12 +1,17 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { Check, Sparkles, Loader2, X } from 'lucide-react';
+import { toast } from 'sonner';
+import { useServerFn } from '@tanstack/react-start';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useStripeCheckout } from '@/hooks/useStripeCheckout';
 import { useSession } from '@/lib/use-session';
+import { useSubscription } from '@/hooks/useSubscription';
 import { PaymentTestModeBanner } from '@/components/PaymentTestModeBanner';
 import { AppShell } from '@/components/AppShell';
+import { getStripeEnvironment } from '@/lib/stripe';
+import { changeSubscriptionPlan } from '@/lib/subscription.functions';
 import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/pricing')({
@@ -71,12 +76,33 @@ const PACKS = [
 
 function PricingPage() {
   const { user } = useSession();
+  const { subscription, isActive } = useSubscription();
+  const changePlan = useServerFn(changeSubscriptionPlan);
   const { openCheckout, closeCheckout, isOpen, checkoutElement } = useStripeCheckout();
   const [yearly, setYearly] = useState(false);
   const [loading, setLoading] = useState<string | null>(null);
 
-  const buy = (lookup: string) => {
+  const isPlan = (lookup: string) => lookup.startsWith('betty_') && !lookup.startsWith('betty_credits_');
+  const currentPriceId = isActive ? subscription?.price_id : null;
+
+  const buy = async (lookup: string) => {
     if (!user) { window.location.href = '/auth?next=/pricing'; return; }
+
+    // Plan switch with proration if user is on a different active plan
+    if (isPlan(lookup) && currentPriceId && currentPriceId !== lookup) {
+      setLoading(lookup);
+      try {
+        const res = await changePlan({ data: { newPriceId: lookup, environment: getStripeEnvironment() } });
+        if ('error' in res) throw new Error(res.error);
+        toast.success('Plan updated — prorated charge applied.');
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : 'Could not change plan');
+      } finally {
+        setLoading(null);
+      }
+      return;
+    }
+
     setLoading(lookup);
     openCheckout({
       priceId: lookup,
@@ -133,10 +159,13 @@ function PricingPage() {
                 </div>
                 <Button
                   onClick={() => buy(lookup)}
-                  disabled={loading === lookup}
+                  disabled={loading === lookup || currentPriceId === lookup}
                   className={cn('w-full', p.highlight && 'bg-violet-500 hover:bg-violet-400')}
                 >
-                  {loading === lookup ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Get started'}
+                  {loading === lookup ? <Loader2 className="w-4 h-4 animate-spin" />
+                    : currentPriceId === lookup ? 'Current plan'
+                    : currentPriceId ? 'Switch (prorated)'
+                    : 'Get started'}
                 </Button>
                 <ul className="space-y-2 text-sm">
                   {p.perks.map((perk) => (
