@@ -43,6 +43,8 @@ export const generateLipsync = createServerFn({ method: "POST" })
     if (!falKey) throw new Error("Lipsync service not configured (FAL_KEY missing)");
     const { supabase, userId } = context;
 
+    await enforceRateLimit(supabase, userId, "lipsync:submit", 8, 60);
+
     const [videoUrl, audioUrl] = await Promise.all([
       resolveUrl(supabase, userId, data.videoSource),
       resolveUrl(supabase, userId, data.audioSource),
