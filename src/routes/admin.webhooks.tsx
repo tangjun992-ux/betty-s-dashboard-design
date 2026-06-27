@@ -113,43 +113,87 @@ function WebhookDebugPage() {
           <>
             <StatsRow stats={q.data?.stats} loading={q.isLoading} />
 
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Filter by event_id or type (e.g. invoice.paid)"
-                className="pl-9"
-              />
-            </div>
+            {(() => {
+              const events = q.data?.events ?? [];
+              const selectedEvents = events.filter((e) => selected[e.event_id]);
+              const allSelected = events.length > 0 && selectedEvents.length === events.length;
+              const someSelected = selectedEvents.length > 0 && !allSelected;
+              const toggleAll = () => {
+                if (allSelected) setSelected({});
+                else setSelected(Object.fromEntries(events.map((e) => [e.event_id, true])));
+              };
+              const exportCsv = () => {
+                const rows = selectedEvents.length > 0 ? selectedEvents : events;
+                if (rows.length === 0) {
+                  toast.error("Nothing to export");
+                  return;
+                }
+                const csv = buildCsv(rows);
+                const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+                downloadCsv(`webhook-events-${ts}.csv`, csv);
+                const ledgerRows = rows.reduce((s, r) => s + r.ledger.length, 0);
+                toast.success(`Exported ${rows.length} event(s) · ${ledgerRows} ledger row(s)`);
+              };
 
-            <Card className="overflow-hidden">
-              <div className="grid grid-cols-12 border-b px-4 py-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                <div className="col-span-1"></div>
-                <div className="col-span-5">event_id</div>
-                <div className="col-span-3">type</div>
-                <div className="col-span-2">processed_at</div>
-                <div className="col-span-1 text-right">ledger</div>
-              </div>
-              {q.isLoading ? (
-                <div className="p-6 text-sm text-muted-foreground">Loading…</div>
-              ) : (q.data?.events ?? []).length === 0 ? (
-                <div className="p-6 text-sm text-muted-foreground">No events yet.</div>
-              ) : (
-                (q.data?.events ?? []).map((ev) => (
-                  <EventRow
-                    key={ev.event_id}
-                    ev={ev}
-                    open={!!open[ev.event_id]}
-                    onToggle={() => setOpen((s) => ({ ...s, [ev.event_id]: !s[ev.event_id] }))}
-                    onReplay={(idem) =>
-                      replay.mutate({ eventId: ev.event_id, idempotencyKey: idem })
-                    }
-                    replayPending={replay.isPending}
-                  />
-                ))
-              )}
-            </Card>
+              return (
+                <>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="relative flex-1 min-w-[240px]">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Filter by event_id or type (e.g. invoice.paid)"
+                        className="pl-9"
+                      />
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {selectedEvents.length > 0 ? `${selectedEvents.length} selected` : `${events.length} total`}
+                    </div>
+                    <Button size="sm" onClick={exportCsv} disabled={events.length === 0}>
+                      <Download className="mr-2 h-4 w-4" />
+                      Export CSV {selectedEvents.length > 0 ? `(${selectedEvents.length})` : "(all)"}
+                    </Button>
+                  </div>
+
+                  <Card className="overflow-hidden">
+                    <div className="grid grid-cols-12 items-center gap-2 border-b px-4 py-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      <div className="col-span-1 flex items-center gap-2">
+                        <Checkbox
+                          checked={allSelected ? true : someSelected ? "indeterminate" : false}
+                          onCheckedChange={toggleAll}
+                          aria-label="Select all events"
+                        />
+                      </div>
+                      <div className="col-span-5">event_id</div>
+                      <div className="col-span-3">type</div>
+                      <div className="col-span-2">processed_at</div>
+                      <div className="col-span-1 text-right">ledger</div>
+                    </div>
+                    {q.isLoading ? (
+                      <div className="p-6 text-sm text-muted-foreground">Loading…</div>
+                    ) : events.length === 0 ? (
+                      <div className="p-6 text-sm text-muted-foreground">No events yet.</div>
+                    ) : (
+                      events.map((ev) => (
+                        <EventRow
+                          key={ev.event_id}
+                          ev={ev}
+                          open={!!open[ev.event_id]}
+                          selected={!!selected[ev.event_id]}
+                          onSelect={(v) => setSelected((s) => ({ ...s, [ev.event_id]: v }))}
+                          onToggle={() => setOpen((s) => ({ ...s, [ev.event_id]: !s[ev.event_id] }))}
+                          onReplay={(idem) =>
+                            replay.mutate({ eventId: ev.event_id, idempotencyKey: idem })
+                          }
+                          replayPending={replay.isPending}
+                        />
+                      ))
+                    )}
+                  </Card>
+                </>
+              );
+            })()}
           </>
         )}
       </div>
