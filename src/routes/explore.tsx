@@ -211,52 +211,54 @@ function ExplorePage() {
   return (
     <AppShell>
       <div className="px-6 lg:px-8 pt-5 pb-12 space-y-8">
-        {/* Hero feature banner */}
+        {/* Hero feature banner — Yapper-style: bold uppercase headline + thumbnail stack + mini composer */}
         <section className="relative overflow-hidden rounded-2xl bg-surface">
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-6 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-[1.1fr_auto_1fr] gap-6 items-stretch">
             <div className="p-8 md:p-10 flex flex-col justify-center">
               <span className="text-[11px] font-semibold tracking-[0.18em] text-sky-400 uppercase">New Feature</span>
-              <h2 className="mt-4 text-3xl md:text-[40px] font-bold leading-[1.05] tracking-tight">
+              <h2 className="mt-4 font-black uppercase leading-[0.95] tracking-tight text-[44px] md:text-[52px] lg:text-[58px]">
                 Betty Agent.<br />Don't prompt,<br />just direct.
               </h2>
-              <p className="mt-4 text-[13.5px] text-muted-foreground max-w-md leading-relaxed">
+              <p className="mt-5 text-[13.5px] text-muted-foreground max-w-md leading-relaxed">
                 Describe what you want to make and let Agent plan, generate, edit, and craft your optimal creative workflow. Works for any task, any medium, any style.
               </p>
-              <button className="mt-7 inline-flex items-center gap-2 self-start h-10 px-5 rounded-full bg-foreground text-background text-sm font-medium hover:opacity-90 transition">
+              <button
+                onClick={() => navigate({ to: "/create/agent" } as never)}
+                className="mt-7 inline-flex items-center gap-2 self-start h-10 px-5 rounded-full bg-foreground text-background text-sm font-medium hover:opacity-90 transition"
+              >
                 <Sparkles className="size-4" /> Try Agent
               </button>
             </div>
 
-            {/* Vertical thumbnail stack */}
-            <div className="hidden md:flex flex-col gap-2 py-8 pr-0">
-              {[toolAvatar, toolVideogen, toolMotion, bannerInfluencers, toolHeadshot].map((s, i) => (
-                <div key={i} className="w-[58px] h-[78px] rounded-md overflow-hidden border border-border/40 bg-background/40">
+            {/* Vertical thumbnail stack — exactly 4 like Yapper */}
+            <div className="hidden md:flex flex-col gap-2 py-10 pr-0">
+              {[toolAvatar, toolHeadshot, toolMotion, bannerInfluencers].map((s, i) => (
+                <div key={i} className="w-[64px] h-[86px] rounded-md overflow-hidden border border-border/40 bg-background/40">
                   <img src={s} alt="" className="w-full h-full object-cover" />
                 </div>
               ))}
             </div>
 
-            {/* Mini composer preview */}
-            <div className="hidden md:flex items-center pr-8 py-8">
-              <div className="w-full rounded-2xl bg-background/60 border border-border/60 p-3 backdrop-blur shadow-[0_8px_30px_-12px_rgba(0,0,0,0.6)]">
-                <div className="flex items-start gap-2">
-                  <div className="flex flex-col gap-1 pt-1.5">
+            {/* Mini composer preview — real Yapper layout */}
+            <div className="hidden md:flex items-center pr-8 py-10">
+              <div className="w-full rounded-2xl bg-background/70 border border-border/60 p-3 backdrop-blur shadow-[0_8px_30px_-12px_rgba(0,0,0,0.6)]">
+                <div className="text-[13px] text-muted-foreground/70 px-1 pt-1 pb-3">How can I help you create…</div>
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/40">
+                  <div className="flex items-center gap-1.5">
                     <span className="size-7 rounded-md grid place-items-center bg-surface/70 border border-border/40 text-muted-foreground"><Sparkles className="size-3.5" /></span>
-                    <span className="size-7 rounded-md grid place-items-center bg-surface/70 border border-border/40 text-muted-foreground text-[10px]">⊞</span>
+                    <span className="size-7 rounded-md grid place-items-center bg-surface/70 border border-border/40 text-muted-foreground"><ImagePlus className="size-3.5" /></span>
                     <span className="size-7 rounded-md grid place-items-center bg-surface/70 border border-border/40 text-muted-foreground text-[10px]">▶</span>
                   </div>
-                  <div className="flex-1 min-h-[88px] text-[13px] text-muted-foreground/70 leading-relaxed pt-1.5">
-                    How can I help you create…
-                  </div>
-                  <div className="flex flex-col gap-1 pt-1.5">
-                    <span className="size-7 rounded-md grid place-items-center bg-surface/70 border border-border/40 text-muted-foreground text-[12px]">+</span>
-                    <span className="size-7 rounded-md grid place-items-center bg-surface/70 border border-border/40 text-muted-foreground text-[10px]">≡</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="size-7 rounded-md grid place-items-center bg-brand/15 text-brand text-[12px] font-bold">+</span>
+                    <span className="size-7 rounded-full grid place-items-center bg-gradient-to-br from-rose-400 to-fuchsia-500 text-white text-[10px] font-bold">R</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </section>
+
 
 
         {/* Filter bar */}
@@ -503,6 +505,20 @@ function ModelRow({ section, onOpen }: { section: (typeof featuredModels)[number
             <span className="text-xs">Load more →</span>
           </div>
         )}
+      </div>
+
+      {/* CTA strip — like Yapper's "Try GPT Image 2 / More Examples" */}
+      <div className="mt-3 flex items-center gap-2">
+        <button
+          onClick={() => onOpen(cards[0])}
+          disabled={!cards.length}
+          className="inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-foreground text-background text-[12.5px] font-semibold hover:opacity-90 disabled:opacity-40"
+        >
+          <Sparkles className="size-3.5" /> Try {section.model}
+        </button>
+        <button className="inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-surface text-foreground text-[12.5px] font-medium hover:bg-surface-hover">
+          More Examples <ArrowRight className="size-3.5" />
+        </button>
       </div>
     </section>
   );
