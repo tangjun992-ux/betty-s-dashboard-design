@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Video, Zap, Mic2, Activity, Coins, Loader2,
   Puzzle, Images, Film, AudioLines,
+  Clock, CheckCircle2, XCircle, X,
 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -68,14 +69,47 @@ function VideoPage() {
       return [...prev, el];
     });
   }
-  const [busy, setBusy] = useState(false);
+  type Phase = "idle" | "queued" | "running" | "finalizing" | "completed" | "failed" | "cancelled";
+  const [phase, setPhase] = useState<Phase>("idle");
+  const [progress, setProgress] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
+  const [errMsg, setErrMsg] = useState<string | null>(null);
+  const busy = phase === "queued" || phase === "running" || phase === "finalizing";
   const [result, setResult] = useState<string | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const submit = useServerFn(generateVideo);
   const poll = useServerFn(pollGeneration);
   const pollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const cancelledRef = useRef(false);
 
-  useEffect(() => () => { if (pollTimer.current) clearTimeout(pollTimer.current); }, []);
+  useEffect(() => () => {
+    if (pollTimer.current) clearTimeout(pollTimer.current);
+    if (timerRef.current) clearInterval(timerRef.current);
+  }, []);
+
+  function startTimer() {
+    const startedAt = Date.now();
+    setElapsed(0); setProgress(2);
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      const e = (Date.now() - startedAt) / 1000;
+      setElapsed(e);
+      // soft asymptote toward 92% over ~90s
+      setProgress((p) => (p >= 92 ? 92 : Math.min(92, 2 + (90 * e) / (e + 45))));
+    }, 200);
+  }
+  function stopTimer() {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+  }
+  function onCancel() {
+    cancelledRef.current = true;
+    if (pollTimer.current) { clearTimeout(pollTimer.current); pollTimer.current = null; }
+    stopTimer();
+    setPhase("cancelled"); setErrMsg("Cancelled — job may still finish in Library");
+    setJobId(null);
+    toast.message("Cancelled");
+  }
 
   // Coerce params when model changes
   useEffect(() => {
@@ -94,28 +128,35 @@ function VideoPage() {
   async function startPolling(id: string, toastId: string | number) {
     let attempts = 0;
     const tick = async () => {
+      if (cancelledRef.current) return;
       attempts += 1;
       try {
         const r = await poll({ data: { id } });
+        if (cancelledRef.current) return;
         if (r.status === "succeeded" && r.url) {
-          setResult(r.url); setBusy(false); setJobId(null);
+          stopTimer();
+          setResult(r.url); setProgress(100); setPhase("completed"); setJobId(null);
           toast.success("Video ready", { id: toastId });
           return;
         }
         if (r.status === "failed") {
-          setBusy(false); setJobId(null);
+          stopTimer();
+          setPhase("failed"); setErrMsg(r.error || "Generation failed"); setJobId(null);
           toast.error(r.error || "Video generation failed", { id: toastId });
           return;
         }
+        if (r.status === "queued" || r.status === "running") setPhase(r.status);
       } catch (e) {
         if (attempts > 80) {
-          setBusy(false); setJobId(null);
+          stopTimer();
+          setPhase("failed"); setErrMsg(e instanceof Error ? e.message : "Polling failed"); setJobId(null);
           toast.error(e instanceof Error ? e.message : "Polling failed", { id: toastId });
           return;
         }
       }
       if (attempts > 80) {
-        setBusy(false); setJobId(null);
+        stopTimer();
+        setPhase("failed"); setErrMsg("Timed out"); setJobId(null);
         toast.error("Video timed out. Check Library later.", { id: toastId });
         return;
       }
@@ -131,7 +172,9 @@ function VideoPage() {
       toast.error("Add a Start frame before End frame");
       return;
     }
-    setBusy(true); setResult(null);
+    cancelledRef.current = false;
+    setResult(null); setErrMsg(null);
+    setPhase("queued"); startTimer();
     const safeRes: VideoResolution = resolution === "4K" ? "1080p" : resolution;
     const t = toast.loading(`Queued — ${model.label} ~1–2 min…`);
     try {
@@ -140,11 +183,13 @@ function VideoPage() {
         startFrameUrl: startFrameUrl ?? undefined,
         endFrameUrl: endFrameUrl ?? undefined,
       } });
-      setJobId(r.id);
+      if (cancelledRef.current) return;
+      setJobId(r.id); setPhase("running");
       if (advanced.clearOnSubmit) setPrompt("");
       startPolling(r.id, t);
     } catch (err) {
-      setBusy(false);
+      stopTimer();
+      setPhase("failed"); setErrMsg(err instanceof Error ? err.message : "Submit failed");
       toast.error(err instanceof Error ? err.message : "Submit failed", { id: t });
     }
   }
@@ -197,16 +242,43 @@ function VideoPage() {
                 </>
               }
             />
-            {(busy || result) && (
-              <div className="mt-4 rounded-2xl border border-border/60 bg-surface/70 p-4 min-h-[200px] grid place-items-center">
-                {busy && !result ? (
-                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                    <Loader2 className="size-6 animate-spin text-brand" />
-                    <p className="text-xs">Rendering with {model.label}… {jobId ? "(polling)" : ""}</p>
+            {(phase !== "idle" || result) && (
+              <div className="mt-4 rounded-2xl border border-border/60 bg-surface/70 p-4">
+                <div className="flex items-center justify-between text-[12.5px]">
+                  <div className="flex items-center gap-1.5">
+                    {phase === "queued" && <><Clock className="size-3.5 text-muted-foreground" /><span className="text-muted-foreground">Queued · {model.label}</span></>}
+                    {phase === "running" && <><Loader2 className="size-3.5 animate-spin text-brand" /><span>Rendering · {model.label}</span></>}
+                    {phase === "finalizing" && <><Loader2 className="size-3.5 animate-spin text-brand" /><span>Finalizing…</span></>}
+                    {phase === "completed" && <><CheckCircle2 className="size-3.5 text-emerald-400" /><span className="text-emerald-300">Completed</span></>}
+                    {phase === "failed" && <><XCircle className="size-3.5 text-red-400" /><span className="text-red-300">{errMsg ?? "Failed"}</span></>}
+                    {phase === "cancelled" && <><XCircle className="size-3.5 text-amber-400" /><span className="text-amber-300">{errMsg ?? "Cancelled"}</span></>}
                   </div>
-                ) : result ? (
-                  <video src={result} controls className="max-h-[480px] rounded-xl" />
-                ) : null}
+                  <div className="flex items-center gap-3 text-muted-foreground tabular-nums">
+                    <span>{elapsed.toFixed(1)}s</span>
+                    <span>{Math.round(progress)}%</span>
+                    {busy && (
+                      <button onClick={onCancel} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-border/60 hover:bg-white/5 text-foreground" aria-label="Cancel generation">
+                        <X className="size-3" /> Cancel
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="mt-2 h-1.5 rounded-full bg-white/5 overflow-hidden">
+                  <div
+                    className={`h-full transition-[width] duration-300 ${
+                      phase === "failed" ? "bg-red-500"
+                      : phase === "cancelled" ? "bg-amber-500"
+                      : phase === "completed" ? "bg-emerald-500"
+                      : "bg-brand"
+                    } ${busy ? "animate-pulse" : ""}`}
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                {result && (
+                  <div className="mt-3 grid place-items-center">
+                    <video src={result} controls className="max-h-[480px] rounded-xl" />
+                  </div>
+                )}
               </div>
             )}
           </>
