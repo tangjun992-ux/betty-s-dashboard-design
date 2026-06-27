@@ -319,6 +319,7 @@ function DetailPanel({ card, onClose }: { card: Card; onClose: () => void }) {
     onClose();
     navigate({ to: card.kind === "video" ? "/create/video" : "/create/image", search: remixSearch(card) });
   }
+  return (
     <div className="flex flex-col h-full">
       <div className="relative bg-surface" style={{ aspectRatio: card.ratio }}>
         <img src={card.src} alt="" className="absolute inset-0 w-full h-full object-cover" />
