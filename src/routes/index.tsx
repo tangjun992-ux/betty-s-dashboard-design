@@ -21,6 +21,7 @@ import { ToolPill } from "@/components/dashboard/ToolPill";
 import { MediaCard } from "@/components/dashboard/MediaCard";
 import { RecentGenerations } from "@/components/dashboard/RecentGenerations";
 import { DashboardMotion } from "@/components/dashboard/DashboardMotion";
+import { HomeComposer } from "@/components/dashboard/HomeComposer";
 
 
 import bannerEarn from "@/assets/banner-earn.jpg";
@@ -91,7 +92,12 @@ const creatorExamples = [
 function Dashboard() {
   return (
     <AppShell>
-      <DashboardMotion><div className="pt-6 pb-14 space-y-14">
+      <DashboardMotion><div className="pt-8 pb-14 space-y-14">
+
+        {/* Hero Prompt — one-shot composer */}
+        <HomeComposer />
+
+
 
 
         {/* Banner carousel — peeks next slide */}
