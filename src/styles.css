@@ -41,9 +41,34 @@
   --color-accent-amber: var(--accent-amber);
   --color-accent-rose: var(--accent-rose);
 
+  /* Surface tiers (base → card → elevated) */
+  --color-surface-base: var(--background);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-hairline: var(--hairline);
+  --color-hairline-strong: var(--hairline-strong);
+
   --font-display: "Geist", "Inter", system-ui, sans-serif;
   --font-sans: "Inter", "Geist", system-ui, sans-serif;
   --font-mono: "Geist Mono", "JetBrains Mono", ui-monospace, monospace;
+
+  /* Type scale — Yapper-aligned rhythm */
+  --text-2xs: 0.6875rem;   /* 11 */
+  --text-xs:  0.75rem;     /* 12 */
+  --text-sm:  0.8125rem;   /* 13 */
+  --text-base: 0.875rem;   /* 14 */
+  --text-md:  0.9375rem;   /* 15 */
+  --text-lg:  1.0625rem;   /* 17 — section titles */
+  --text-xl:  1.25rem;     /* 20 */
+  --text-2xl: 1.5rem;      /* 24 */
+  --text-3xl: 1.875rem;    /* 30 */
+  --text-4xl: 2.25rem;     /* 36 */
+  --text-5xl: 2.75rem;     /* 44 */
+
+  --tracking-tightish: -0.011em;
+  --tracking-tight: -0.018em;
+  --tracking-display: -0.025em;
 }
 
 :root {
