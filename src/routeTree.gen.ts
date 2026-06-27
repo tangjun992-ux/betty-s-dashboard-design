@@ -13,6 +13,7 @@ import { Route as ToolsRouteImport } from './routes/tools'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SessionsRouteImport } from './routes/sessions'
+import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as FeedRouteImport } from './routes/feed'
 import { Route as ExploreRouteImport } from './routes/explore'
@@ -33,6 +34,8 @@ import { Route as CreateElementsRouteImport } from './routes/create.elements'
 import { Route as CreateAvatarRouteImport } from './routes/create.avatar'
 import { Route as CreateAudioRouteImport } from './routes/create.audio'
 import { Route as CreateAgentRouteImport } from './routes/create.agent'
+import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
+import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 
 const ToolsRoute = ToolsRouteImport.update({
   id: '/tools',
@@ -52,6 +55,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const SessionsRoute = SessionsRouteImport.update({
   id: '/sessions',
   path: '/sessions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LibraryRoute = LibraryRouteImport.update({
@@ -154,6 +162,17 @@ const CreateAgentRoute = CreateAgentRouteImport.update({
   path: '/agent',
   getParentRoute: () => CreateRoute,
 } as any)
+const CheckoutReturnRoute = CheckoutReturnRouteImport.update({
+  id: '/checkout/return',
+  path: '/checkout/return',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicPaymentsWebhookRoute =
+  ApiPublicPaymentsWebhookRouteImport.update({
+    id: '/api/public/payments/webhook',
+    path: '/api/public/payments/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -163,10 +182,12 @@ export interface FileRoutesByFullPath {
   '/explore': typeof ExploreRoute
   '/feed': typeof FeedRoute
   '/library': typeof LibraryRoute
+  '/pricing': typeof PricingRoute
   '/sessions': typeof SessionsRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/tools': typeof ToolsRoute
+  '/checkout/return': typeof CheckoutReturnRoute
   '/create/agent': typeof CreateAgentRoute
   '/create/audio': typeof CreateAudioRoute
   '/create/avatar': typeof CreateAvatarRoute
@@ -180,6 +201,7 @@ export interface FileRoutesByFullPath {
   '/create/upscale': typeof CreateUpscaleRoute
   '/create/video': typeof CreateVideoRoute
   '/u/$handle': typeof UHandleRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -189,10 +211,12 @@ export interface FileRoutesByTo {
   '/explore': typeof ExploreRoute
   '/feed': typeof FeedRoute
   '/library': typeof LibraryRoute
+  '/pricing': typeof PricingRoute
   '/sessions': typeof SessionsRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/tools': typeof ToolsRoute
+  '/checkout/return': typeof CheckoutReturnRoute
   '/create/agent': typeof CreateAgentRoute
   '/create/audio': typeof CreateAudioRoute
   '/create/avatar': typeof CreateAvatarRoute
@@ -206,6 +230,7 @@ export interface FileRoutesByTo {
   '/create/upscale': typeof CreateUpscaleRoute
   '/create/video': typeof CreateVideoRoute
   '/u/$handle': typeof UHandleRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -216,10 +241,12 @@ export interface FileRoutesById {
   '/explore': typeof ExploreRoute
   '/feed': typeof FeedRoute
   '/library': typeof LibraryRoute
+  '/pricing': typeof PricingRoute
   '/sessions': typeof SessionsRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/tools': typeof ToolsRoute
+  '/checkout/return': typeof CheckoutReturnRoute
   '/create/agent': typeof CreateAgentRoute
   '/create/audio': typeof CreateAudioRoute
   '/create/avatar': typeof CreateAvatarRoute
@@ -233,6 +260,7 @@ export interface FileRoutesById {
   '/create/upscale': typeof CreateUpscaleRoute
   '/create/video': typeof CreateVideoRoute
   '/u/$handle': typeof UHandleRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -244,10 +272,12 @@ export interface FileRouteTypes {
     | '/explore'
     | '/feed'
     | '/library'
+    | '/pricing'
     | '/sessions'
     | '/settings'
     | '/sitemap.xml'
     | '/tools'
+    | '/checkout/return'
     | '/create/agent'
     | '/create/audio'
     | '/create/avatar'
@@ -261,6 +291,7 @@ export interface FileRouteTypes {
     | '/create/upscale'
     | '/create/video'
     | '/u/$handle'
+    | '/api/public/payments/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -270,10 +301,12 @@ export interface FileRouteTypes {
     | '/explore'
     | '/feed'
     | '/library'
+    | '/pricing'
     | '/sessions'
     | '/settings'
     | '/sitemap.xml'
     | '/tools'
+    | '/checkout/return'
     | '/create/agent'
     | '/create/audio'
     | '/create/avatar'
@@ -287,6 +320,7 @@ export interface FileRouteTypes {
     | '/create/upscale'
     | '/create/video'
     | '/u/$handle'
+    | '/api/public/payments/webhook'
   id:
     | '__root__'
     | '/'
@@ -296,10 +330,12 @@ export interface FileRouteTypes {
     | '/explore'
     | '/feed'
     | '/library'
+    | '/pricing'
     | '/sessions'
     | '/settings'
     | '/sitemap.xml'
     | '/tools'
+    | '/checkout/return'
     | '/create/agent'
     | '/create/audio'
     | '/create/avatar'
@@ -313,6 +349,7 @@ export interface FileRouteTypes {
     | '/create/upscale'
     | '/create/video'
     | '/u/$handle'
+    | '/api/public/payments/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -323,11 +360,14 @@ export interface RootRouteChildren {
   ExploreRoute: typeof ExploreRoute
   FeedRoute: typeof FeedRoute
   LibraryRoute: typeof LibraryRoute
+  PricingRoute: typeof PricingRoute
   SessionsRoute: typeof SessionsRoute
   SettingsRoute: typeof SettingsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ToolsRoute: typeof ToolsRoute
+  CheckoutReturnRoute: typeof CheckoutReturnRoute
   UHandleRoute: typeof UHandleRoute
+  ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -358,6 +398,13 @@ declare module '@tanstack/react-router' {
       path: '/sessions'
       fullPath: '/sessions'
       preLoaderRoute: typeof SessionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/library': {
@@ -500,6 +547,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreateAgentRouteImport
       parentRoute: typeof CreateRoute
     }
+    '/checkout/return': {
+      id: '/checkout/return'
+      path: '/checkout/return'
+      fullPath: '/checkout/return'
+      preLoaderRoute: typeof CheckoutReturnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/payments/webhook': {
+      id: '/api/public/payments/webhook'
+      path: '/api/public/payments/webhook'
+      fullPath: '/api/public/payments/webhook'
+      preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -544,22 +605,15 @@ const rootRouteChildren: RootRouteChildren = {
   ExploreRoute: ExploreRoute,
   FeedRoute: FeedRoute,
   LibraryRoute: LibraryRoute,
+  PricingRoute: PricingRoute,
   SessionsRoute: SessionsRoute,
   SettingsRoute: SettingsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ToolsRoute: ToolsRoute,
+  CheckoutReturnRoute: CheckoutReturnRoute,
   UHandleRoute: UHandleRoute,
+  ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
