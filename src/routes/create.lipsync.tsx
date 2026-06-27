@@ -48,6 +48,7 @@ function LipsyncPage() {
   const [topic, setTopic] = useState<Topic>("All");
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
+  const [committed, setCommitted] = useState<LipsyncSource | null>(null);
 
   return (
     <AppShell>
@@ -55,7 +56,6 @@ function LipsyncPage() {
         <h1 className="text-center text-[28px] lg:text-[32px] font-semibold tracking-tight">Select your base asset</h1>
         <p className="text-center text-[14px] text-muted-foreground mt-2">The source image or video for your lipsync.</p>
 
-        {/* Popular / Your Media segmented */}
         <div className="flex justify-center mt-7">
           <div className="inline-flex p-1 rounded-full bg-surface/70 border border-border/60">
             <Seg active={tab === "popular"} onClick={() => { setTab("popular"); setCat("All"); }} icon={<Sparkles className="size-3.5" />}>Popular</Seg>
@@ -77,9 +77,16 @@ function LipsyncPage() {
             cat={cat} setCat={setCat}
             q={q} setQ={setQ}
             selected={selected} setSelected={setSelected}
+            onContinue={(src) => setCommitted(src)}
           />
         )}
       </div>
+
+      <LipsyncStep2
+        open={committed !== null}
+        onOpenChange={(v) => { if (!v) setCommitted(null); }}
+        video={committed}
+      />
     </AppShell>
   );
 }
