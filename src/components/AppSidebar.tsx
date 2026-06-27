@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Home, Compass, FolderOpen, Sparkles, Image as ImageIcon, Video, Mic2,
   Activity, AudioLines, Maximize2, ScanLine, ChevronDown, Search,
-  PanelLeft, Heart, Wand2, Film, Boxes, HelpCircle, Languages,
+  PanelLeft, Heart, Wand2, Film, Boxes, HelpCircle, Languages, Scissors,
 } from "lucide-react";
 import { useState } from "react";
 import { useSidebarState } from "@/components/sidebar-state";
@@ -28,6 +28,7 @@ const toolsNav = [
   { to: "/create/audio", icon: AudioLines, label: "Audio" },
   { to: "/create/elements", icon: Boxes, label: "My Elements" },
   { to: "/create/upscale", icon: Maximize2, label: "Upscaler" },
+  { to: "/create/bg-remove", icon: Scissors, label: "BG Remover" },
 ] as const;
 
 

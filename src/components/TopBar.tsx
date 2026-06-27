@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useSession, useProfile } from "@/lib/use-session";
 import { supabase } from "@/integrations/supabase/client";
 import { CreditDisplay } from "@/components/dashboard/CreditDisplay";
+import { JobsTray } from "@/components/JobsTray";
 import { AppSidebar } from "@/components/AppSidebar";
 import {
   DropdownMenu,
@@ -126,6 +127,7 @@ export function TopBar() {
         </motion.div>
       </div>
 
+      <JobsTray />
       <CreditDisplay credits={credits} />
 
       <DropdownMenu>
