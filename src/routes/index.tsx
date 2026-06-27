@@ -91,7 +91,7 @@ function Dashboard() {
         <section>
           <div className="flex gap-5 overflow-x-auto scrollbar-hide pl-6 lg:pl-8 pr-6 lg:pr-8 pb-1">
             {banners.map((b) => (
-              <a key={b.title} href="#" className="group shrink-0 w-[min(760px,calc(100vw-260px))]">
+              <Link key={b.title} to={b.to} className="group shrink-0 w-[min(760px,calc(100vw-260px))]">
                 <div className="relative aspect-[16/6] rounded-2xl overflow-hidden">
                   <img src={b.image} alt={b.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]" />
                 </div>
@@ -99,7 +99,7 @@ function Dashboard() {
                   <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10.5px] font-semibold uppercase tracking-wide ${b.tagClass}`}>{b.tag}</span>
                   <h3 className="text-[14px] font-medium text-foreground/90 group-hover:text-foreground">{b.title}</h3>
                 </div>
-              </a>
+              </Link>
             ))}
           </div>
         </section>
