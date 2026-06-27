@@ -1,12 +1,13 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Home, Compass, FolderOpen, Sparkles, Image as ImageIcon, Video, Mic2,
-  Activity, AudioLines, Maximize2, ScanLine, ChevronDown, Plus, Search,
+  Activity, AudioLines, Maximize2, ScanLine, ChevronDown, Search,
   PanelLeft, Heart, Wand2, Film, Boxes, HelpCircle, Languages,
 } from "lucide-react";
 import { useState } from "react";
 import { useSidebarState } from "@/components/sidebar-state";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { SidebarSessions } from "@/components/sidebar-sessions";
 
 const mainNav = [
   { to: "/", icon: Home, label: "Home" },
@@ -91,16 +92,12 @@ export function AppSidebar() {
             </div>
           )}
 
-          {!collapsed && (
+          {!collapsed ? (
             <Section title="Sessions">
-              <Link
-                to="/sessions"
-                className="w-full flex items-center gap-2 px-2.5 h-9 rounded-lg text-[13px] text-muted-foreground hover:bg-surface-hover hover:text-foreground transition-colors border border-border/60 border-dashed"
-              >
-                <Plus className="size-3.5" />
-                <span>New Session</span>
-              </Link>
+              <SidebarSessions collapsed={false} />
             </Section>
+          ) : (
+            <SidebarSessions collapsed />
           )}
         </nav>
 
