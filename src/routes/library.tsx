@@ -51,8 +51,15 @@ function LibraryPage() {
   const { user, loading } = useSession();
   const [tab, setTab] = useState<Kind>("all");
   const [view, setView] = useState<View>("grid");
+  const [query, setQuery] = useState("");
+  const [debounced, setDebounced] = useState("");
   const fetcher = useServerFn(listMyGenerations);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(query.trim().toLowerCase()), 180);
+    return () => clearTimeout(t);
+  }, [query]);
 
   const q = useQuery({
     queryKey: ["my-generations", user?.id],
@@ -71,17 +78,26 @@ function LibraryPage() {
 
   const all = q.data ?? [];
   const counts = useMemo(() => {
-    const c: Record<Kind, number> = { all: all.length, image: 0, video: 0, audio: 0 };
+    const c: Record<Kind, number> = { all: all.length, image: 0, video: 0, audio: 0, upload: 0 };
     for (const g of all) {
-      if (g.kind === "image" || g.kind === "video" || g.kind === "audio") c[g.kind]++;
+      if ((g as any).model === "upload") c.upload++;
+      if (g.kind === "image" || g.kind === "video" || g.kind === "audio") c[g.kind as Kind]++;
     }
     return c;
   }, [all]);
 
-  const items = useMemo(
-    () => (tab === "all" ? all : all.filter((g) => g.kind === tab)),
-    [all, tab],
-  );
+  const items = useMemo(() => {
+    let list = all;
+    if (tab === "upload") list = list.filter((g) => (g as any).model === "upload");
+    else if (tab !== "all") list = list.filter((g) => g.kind === tab);
+    if (debounced) {
+      list = list.filter((g) => {
+        const hay = `${g.prompt ?? ""} ${(g as any).model ?? ""} ${g.kind ?? ""}`.toLowerCase();
+        return hay.includes(debounced);
+      });
+    }
+    return list;
+  }, [all, tab, debounced]);
 
   return (
     <AppShell>
