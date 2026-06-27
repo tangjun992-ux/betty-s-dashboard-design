@@ -21,6 +21,7 @@ import { ToolPill } from "@/components/dashboard/ToolPill";
 import { MediaCard } from "@/components/dashboard/MediaCard";
 import { RecentGenerations } from "@/components/dashboard/RecentGenerations";
 import { DashboardMotion } from "@/components/dashboard/DashboardMotion";
+import { HomeComposer } from "@/components/dashboard/HomeComposer";
 
 
 import bannerEarn from "@/assets/banner-earn.jpg";
