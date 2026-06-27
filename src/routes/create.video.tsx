@@ -35,7 +35,7 @@ export const Route = createFileRoute("/create/video")({
   component: VideoPage,
 });
 
-const DEFAULT_MODEL = VIDEO_MODELS.find((m) => m.key === "seedance-2-fast") ?? VIDEO_MODELS[0];
+const DEFAULT_MODEL = VIDEO_MODELS.find((m) => m.key === "seedance-2") ?? VIDEO_MODELS[0];
 
 function VideoPage() {
   const navigate = useNavigate();
@@ -48,9 +48,10 @@ function VideoPage() {
   const [prompt, setPrompt] = useState<string>(search.prompt ?? "");
   const [model, setModel] = useState(initialModel);
   const [aspect, setAspect] = useState<Aspect>(
-    (search.aspect as Aspect) ?? "9:16",
+    (search.aspect as Aspect) ?? "16:9",
   );
-  const [duration, setDuration] = useState<number>(15);
+  const [duration, setDuration] = useState<number>(8);
+
   const [resolution, setResolution] = useState<VideoResolution>("720p");
   const [batch, setBatch] = useState(1);
   const [advanced, setAdvanced] = useState<AdvancedOptions>({
@@ -78,8 +79,9 @@ function VideoPage() {
 
   // Coerce params when model changes
   useEffect(() => {
-    if (!model.aspects.includes(aspect)) setAspect(model.aspects.includes("9:16") ? "9:16" : model.aspects[0]);
-    if (!model.durations.includes(duration)) setDuration(model.durations[model.durations.length - 1]);
+    if (!model.aspects.includes(aspect)) setAspect(model.aspects.includes("16:9") ? "16:9" : model.aspects[0]);
+    if (!model.durations.includes(duration)) setDuration(model.durations.includes(8) ? 8 : model.durations[0]);
+
     // Server only supports 480p/720p/1080p — clamp 4K down
     const safeRes: VideoResolution[] = model.resolutions.filter((r) => r !== "4K");
     if (!safeRes.includes(resolution)) setResolution(safeRes.includes("720p") ? "720p" : safeRes[0] ?? "720p");
@@ -169,7 +171,7 @@ function VideoPage() {
                 <div className="flex gap-2">
                   <RefTile label="Elements" icon={Puzzle} />
                   {model.supportsStartFrame && (
-                    <FrameUploader label="Start frame" value={startFrameUrl} onChange={setStartFrameUrl} disabled={busy} />
+                    <FrameUploader label="Ref Images" value={startFrameUrl} onChange={setStartFrameUrl} disabled={busy} />
                   )}
                   {model.supportsEndFrame && (
                     <FrameUploader label="End frame" value={endFrameUrl} onChange={setEndFrameUrl} disabled={busy} />

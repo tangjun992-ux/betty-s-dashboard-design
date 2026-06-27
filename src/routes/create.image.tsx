@@ -50,7 +50,8 @@ function ImagePage() {
   const [aspect, setAspect] = useState<Aspect>(
     (search.aspect && initialModel.aspects.includes(search.aspect as Aspect))
       ? (search.aspect as Aspect)
-      : initialModel.aspects.includes("9:16") ? "9:16" : initialModel.aspects[0],
+      : initialModel.aspects.includes("16:9") ? "16:9" : initialModel.aspects[0],
+
   );
   const [quality, setQuality] = useState<ImageQuality>(
     initialModel.qualities.includes("2K") ? "2K" : initialModel.qualities[initialModel.qualities.length - 1],
@@ -155,7 +156,7 @@ function ImagePage() {
   }
 
   useEffect(() => {
-    if (!model.aspects.includes(aspect)) setAspect(model.aspects.includes("9:16") ? "9:16" : model.aspects[0]);
+    if (!model.aspects.includes(aspect)) setAspect(model.aspects.includes("16:9") ? "16:9" : model.aspects[0]);
     if (!model.qualities.includes(quality)) {
       setQuality(model.qualities.includes("2K") ? "2K" : model.qualities[model.qualities.length - 1]);
     }
