@@ -68,6 +68,7 @@ function WebhookDebugPage() {
   const runReplay = useServerFn(simulateReplay);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState<Record<string, boolean>>({});
+  const [selected, setSelected] = useState<Record<string, boolean>>({});
 
   const q = useQuery({
     queryKey: ["admin-webhook-debug", search],
