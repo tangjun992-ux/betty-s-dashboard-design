@@ -128,28 +128,35 @@ function VideoPage() {
   async function startPolling(id: string, toastId: string | number) {
     let attempts = 0;
     const tick = async () => {
+      if (cancelledRef.current) return;
       attempts += 1;
       try {
         const r = await poll({ data: { id } });
+        if (cancelledRef.current) return;
         if (r.status === "succeeded" && r.url) {
-          setResult(r.url); setBusy(false); setJobId(null);
+          stopTimer();
+          setResult(r.url); setProgress(100); setPhase("completed"); setJobId(null);
           toast.success("Video ready", { id: toastId });
           return;
         }
         if (r.status === "failed") {
-          setBusy(false); setJobId(null);
+          stopTimer();
+          setPhase("failed"); setErrMsg(r.error || "Generation failed"); setJobId(null);
           toast.error(r.error || "Video generation failed", { id: toastId });
           return;
         }
+        if (r.status === "processing" || r.status === "running") setPhase("running");
       } catch (e) {
         if (attempts > 80) {
-          setBusy(false); setJobId(null);
+          stopTimer();
+          setPhase("failed"); setErrMsg(e instanceof Error ? e.message : "Polling failed"); setJobId(null);
           toast.error(e instanceof Error ? e.message : "Polling failed", { id: toastId });
           return;
         }
       }
       if (attempts > 80) {
-        setBusy(false); setJobId(null);
+        stopTimer();
+        setPhase("failed"); setErrMsg("Timed out"); setJobId(null);
         toast.error("Video timed out. Check Library later.", { id: toastId });
         return;
       }
@@ -165,7 +172,9 @@ function VideoPage() {
       toast.error("Add a Start frame before End frame");
       return;
     }
-    setBusy(true); setResult(null);
+    cancelledRef.current = false;
+    setResult(null); setErrMsg(null);
+    setPhase("queued"); startTimer();
     const safeRes: VideoResolution = resolution === "4K" ? "1080p" : resolution;
     const t = toast.loading(`Queued — ${model.label} ~1–2 min…`);
     try {
@@ -174,11 +183,13 @@ function VideoPage() {
         startFrameUrl: startFrameUrl ?? undefined,
         endFrameUrl: endFrameUrl ?? undefined,
       } });
-      setJobId(r.id);
+      if (cancelledRef.current) return;
+      setJobId(r.id); setPhase("running");
       if (advanced.clearOnSubmit) setPrompt("");
       startPolling(r.id, t);
     } catch (err) {
-      setBusy(false);
+      stopTimer();
+      setPhase("failed"); setErrMsg(err instanceof Error ? err.message : "Submit failed");
       toast.error(err instanceof Error ? err.message : "Submit failed", { id: t });
     }
   }
