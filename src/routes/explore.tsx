@@ -824,10 +824,10 @@ function ExploreCard({ card, full = false, onOpen }: { card: Card; full?: boolea
 
         {loaded && !errored && (
           <div className="absolute inset-x-2 bottom-2 flex gap-1.5 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200">
-            <button className="flex-1 h-7 rounded-md bg-white/95 text-[11px] font-semibold text-background inline-flex items-center justify-center gap-1 hover:bg-white">
+            <button onClick={onRecreate} className="flex-1 h-7 rounded-md bg-white/95 text-[11px] font-semibold text-background inline-flex items-center justify-center gap-1 hover:bg-white">
               <RotateCcw className="size-3" /> Recreate
             </button>
-            <button className="flex-1 h-7 rounded-md bg-white/10 backdrop-blur text-white text-[11px] font-medium inline-flex items-center justify-center gap-1 hover:bg-white/20">
+            <button onClick={onRecreate} className="flex-1 h-7 rounded-md bg-white/10 backdrop-blur text-white text-[11px] font-medium inline-flex items-center justify-center gap-1 hover:bg-white/20">
               <Repeat2 className="size-3" /> Reuse
             </button>
           </div>
