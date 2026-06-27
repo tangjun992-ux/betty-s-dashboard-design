@@ -40,7 +40,7 @@ export function MediaCard({
   return (
     <div className="group block">
       <Wrapper {...wrapperProps} className="block cursor-pointer">
-        <div className="relative aspect-square rounded-xl overflow-hidden bg-surface">
+        <div className="relative aspect-square rounded-xl overflow-hidden bg-surface ring-1 ring-border/40 transition-all duration-300 group-hover:-translate-y-1 group-hover:ring-border group-hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.6)]">
           <img
             src={image}
             alt={title}
