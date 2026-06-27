@@ -19,6 +19,7 @@ import { ElementPicker, ElementChips, injectElementToken, removeElementToken, ty
 import { generateVideo, pollGeneration } from "@/lib/video.functions";
 import { VIDEO_MODELS, type Aspect, type VideoResolution } from "@/lib/model-registry";
 import { useSession } from "@/lib/use-session";
+import { track } from "@/lib/analytics";
 import toolSeedance from "@/assets/tool-seedance.jpg";
 import bannerTutorial from "@/assets/banner-tutorial.jpg";
 import toolMotion from "@/assets/tool-motion.jpg";
@@ -136,12 +137,14 @@ function VideoPage() {
         if (r.status === "succeeded" && r.url) {
           stopTimer();
           setResult(r.url); setProgress(100); setPhase("completed"); setJobId(null);
+          track("video_generate_success", { model: model.id, elapsed_s: elapsed });
           toast.success("Video ready", { id: toastId });
           return;
         }
         if (r.status === "failed") {
           stopTimer();
           setPhase("failed"); setErrMsg(r.error || "Generation failed"); setJobId(null);
+          track("video_generate_fail", { model: model.id, error: r.error });
           toast.error(r.error || "Video generation failed", { id: toastId });
           return;
         }
@@ -177,6 +180,7 @@ function VideoPage() {
     setPhase("queued"); startTimer();
     const safeRes: VideoResolution = resolution === "4K" ? "1080p" : resolution;
     const t = toast.loading(`Queued — ${model.label} ~1–2 min…`);
+    track("video_generate_submit", { model: model.id, aspect, duration, resolution: safeRes, cost: model.cost });
     try {
       const r = await submit({ data: {
         prompt: prompt.trim(), model: model.id, aspect, duration, resolution: safeRes,
@@ -190,6 +194,7 @@ function VideoPage() {
     } catch (err) {
       stopTimer();
       setPhase("failed"); setErrMsg(err instanceof Error ? err.message : "Submit failed");
+      track("video_generate_fail", { model: model.id, error: err instanceof Error ? err.message : String(err) });
       toast.error(err instanceof Error ? err.message : "Submit failed", { id: t });
     }
   }

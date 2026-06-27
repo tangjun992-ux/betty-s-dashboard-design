@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
+import { track } from "@/lib/analytics";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({ meta: [{ title: "Sign in — Betty" }] }),
@@ -34,15 +35,18 @@ function AuthPage() {
           options: { emailRedirectTo: window.location.origin },
         });
         if (error) throw error;
+        track("signup_success", { method: "email" });
         toast.success("Account created. You're in.");
         navigate({ to: "/" });
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        track("signin_success", { method: "email" });
         toast.success("Welcome back");
         navigate({ to: "/" });
       }
     } catch (err) {
+      track(mode === "signup" ? "signup_fail" : "signin_fail", { method: "email" });
       toast.error(err instanceof Error ? err.message : "Auth failed");
     } finally {
       setBusy(false);
@@ -52,10 +56,12 @@ function AuthPage() {
   async function handleGoogle() {
     if (busy) return;
     setBusy(true);
+    track("oauth_start", { provider: "google" });
     const result = await lovable.auth.signInWithOAuth("google", {
       redirect_uri: window.location.origin,
     });
     if (result.error) {
+      track("oauth_fail", { provider: "google" });
       toast.error(result.error instanceof Error ? result.error.message : "Google sign-in failed");
       setBusy(false);
       return;
