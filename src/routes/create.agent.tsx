@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import {
-  Sparkles, Plus, Settings2, Feather, Sun, Wand2, FileText, MessagesSquare,
+  Sparkles, Plus, Settings2, Feather, FileText, MessagesSquare,
   Lightbulb, Music, ImagePlus, Upload,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { CreateHub, Composer, OptionPill } from "@/components/create/CreateHub";
+import { CreateHub, Composer } from "@/components/create/CreateHub";
 import { AssistantSettings } from "@/components/create/AssistantSettings";
+import { ModePill, ModelPill, type AgentMode, type AgentModel } from "@/components/create/AgentComposerPills";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import bannerInfluencers from "@/assets/banner-influencers.jpg";
 import bannerTutorial from "@/assets/banner-tutorial.jpg";
@@ -22,6 +23,8 @@ export const Route = createFileRoute("/create/agent")({
 function AgentPage() {
   const [input, setInput] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [mode, setMode] = useState<AgentMode>("prompt");
+  const [model, setModel] = useState<AgentModel>("sonnet-4.6");
 
   return (
     <AppShell>
@@ -74,8 +77,8 @@ function AgentPage() {
             }
             options={
               <>
-                <OptionPill icon={Wand2} value="Prompt mode" />
-                <OptionPill icon={Sun} value="Sonnet 4.6" />
+                <ModePill mode={mode} onChange={setMode} />
+                <ModelPill model={model} onChange={setModel} />
               </>
             }
           />
