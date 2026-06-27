@@ -102,24 +102,10 @@ export function AppSidebar() {
               </Link>
             </Section>
           )}
-
-          <div className="space-y-0.5">
-            {bottomNav.map((item) => (
-              <NavLink key={item.to} {...item} active={pathname === item.to} collapsed={collapsed} />
-            ))}
-          </div>
         </nav>
 
-        <div className="p-3 space-y-2.5">
-          {!collapsed && (
-            <div className="flex items-center justify-between px-1.5 text-muted-foreground">
-              <button className="hover:text-foreground" aria-label="Discord"><MessageCircle className="size-4" /></button>
-              <button className="hover:text-foreground" aria-label="Social">𝕏</button>
-              <button className="hover:text-foreground" aria-label="Search"><Search className="size-4" /></button>
-              <button className="hover:text-foreground" aria-label="Help"><HelpCircle className="size-4" /></button>
-              <button className="hover:text-foreground" aria-label="Language"><Languages className="size-4" /></button>
-            </div>
-          )}
+        <div className="p-3">
+
           <Link
             to="/auth"
             className={`w-full h-10 rounded-xl bg-surface hover:bg-surface-hover border border-border text-sm font-medium flex items-center justify-center gap-2 transition ${collapsed ? "px-0" : ""}`}
