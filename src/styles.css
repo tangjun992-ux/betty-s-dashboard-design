@@ -75,12 +75,20 @@
   --input: oklch(0.26 0.018 270);
   --ring: oklch(0.62 0.2 280);
 
-  /* Yapper brand: indigo → violet */
-  --brand: oklch(0.62 0.22 280);
+  /* Yapper-style electric indigo brand (tightened from violet) */
+  --brand: oklch(0.64 0.20 268);
+  --brand-hover: oklch(0.70 0.20 268);
   --brand-foreground: oklch(0.99 0.005 270);
+  --brand-soft: oklch(0.64 0.20 268 / 0.14);
 
-  --gradient-brand: linear-gradient(135deg, oklch(0.62 0.22 265), oklch(0.62 0.24 305));
-  --gradient-brand-soft: linear-gradient(135deg, oklch(0.62 0.22 265 / 0.18), oklch(0.62 0.24 305 / 0.18));
+  /* Accent palette — for tags/chips only, drop Tailwind raw colors */
+  --accent-cyan: oklch(0.78 0.13 220);
+  --accent-mint: oklch(0.78 0.14 165);
+  --accent-amber: oklch(0.80 0.14 75);
+  --accent-rose: oklch(0.72 0.18 15);
+
+  --gradient-brand: linear-gradient(135deg, oklch(0.62 0.20 258), oklch(0.66 0.21 285));
+  --gradient-brand-soft: linear-gradient(135deg, oklch(0.64 0.20 268 / 0.18), oklch(0.66 0.21 285 / 0.18));
   --shadow-glow: 0 8px 32px -8px color-mix(in oklab, var(--brand) 55%, transparent);
 }
 
