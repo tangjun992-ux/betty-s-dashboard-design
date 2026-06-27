@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/use-session";
+import { CreateJobsRail } from "@/components/create/CreateJobsRail";
 import { track } from "@/lib/analytics";
 import toolHeadshot from "@/assets/tool-headshot.jpg";
 import toolSeedance from "@/assets/tool-seedance.jpg";
@@ -229,6 +230,8 @@ function ImagePage() {
 
   return (
     <AppShell>
+      <div className="flex min-h-full">
+      <div className="flex-1 min-w-0">
       <CreateHub
         title="Create • Edit • Combine Pro Images"
         chips={[
@@ -426,6 +429,9 @@ function ImagePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
+      <CreateJobsRail kind="image" onReuse={(r) => { setPrompt(r.prompt ?? ""); const m = IMAGE_MODELS.find((x) => x.id === r.model); if (m) setModel(m); window.scrollTo({ top: 0, behavior: "smooth" }); }} />
+      </div>
     </AppShell>
   );
 }

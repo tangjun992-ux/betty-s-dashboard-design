@@ -13,6 +13,7 @@ import { ModePill, ModelPill, type AgentMode, type AgentModel } from "@/componen
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { sendAgentMessage } from "@/lib/agent.functions";
 import { useSession } from "@/lib/use-session";
+import { CreateJobsRail } from "@/components/create/CreateJobsRail";
 import { useNavigate } from "@tanstack/react-router";
 import bannerInfluencers from "@/assets/banner-influencers.jpg";
 import bannerTutorial from "@/assets/banner-tutorial.jpg";
@@ -127,6 +128,8 @@ function AgentPage() {
 
   return (
     <AppShell>
+      <div className="flex min-h-full">
+      <div className="flex-1 min-w-0">
       {messages.length === 0 ? (
         <CreateHub
           title="What do you want to create?"
@@ -191,6 +194,9 @@ function AgentPage() {
         </div>
       )}
       <AssistantSettings open={settingsOpen} onOpenChange={setSettingsOpen} />
+      </div>
+      <CreateJobsRail onReuse={(r) => setInput(r.prompt ?? "")} />
+      </div>
     </AppShell>
   );
 }

@@ -19,6 +19,7 @@ import { ElementPicker, ElementChips, injectElementToken, removeElementToken, ty
 import { generateVideo, pollGeneration } from "@/lib/video.functions";
 import { VIDEO_MODELS, type Aspect, type VideoResolution } from "@/lib/model-registry";
 import { useSession } from "@/lib/use-session";
+import { CreateJobsRail } from "@/components/create/CreateJobsRail";
 import { track } from "@/lib/analytics";
 import toolSeedance from "@/assets/tool-seedance.jpg";
 import bannerTutorial from "@/assets/banner-tutorial.jpg";
@@ -201,6 +202,8 @@ function VideoPage() {
 
   return (
     <AppShell>
+      <div className="flex min-h-full">
+      <div className="flex-1 min-w-0">
       <CreateHub
         title={<>Generate • Edit • Remix Pro Videos</>}
         chips={[
@@ -298,6 +301,10 @@ function VideoPage() {
           { image: toolVideogen, title: "4K Cinematic", tag: "4K" },
         ]}
       />
+
+      </div>
+      <CreateJobsRail kind="video" onReuse={(r) => { setPrompt(r.prompt ?? ""); const m = VIDEO_MODELS.find((x) => x.id === r.model); if (m) setModel(m); window.scrollTo({ top: 0, behavior: "smooth" }); }} />
+      </div>
     </AppShell>
   );
 }
