@@ -126,6 +126,7 @@ export function TopBar() {
         </motion.div>
       </div>
 
+      <JobsTray />
       <CreditDisplay credits={credits} />
 
       <DropdownMenu>
