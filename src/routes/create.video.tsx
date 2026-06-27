@@ -201,6 +201,8 @@ function VideoPage() {
 
   return (
     <AppShell>
+      <div className="flex min-h-full">
+      <div className="flex-1 min-w-0">
       <CreateHub
         title={<>Generate • Edit • Remix Pro Videos</>}
         chips={[
