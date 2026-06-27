@@ -197,20 +197,29 @@ export const pollGeneration = createServerFn({ method: "POST" })
         await supabase.from("generations").update({ status: "failed", error: `fetch result: ${txt.slice(0, 200)}` }).eq("id", row.id);
         return { status: "failed" as const, url: null, error: txt.slice(0, 200) };
       }
-      const rJson = await rResp.json() as { video?: { url?: string } };
-      const remoteUrl = rJson?.video?.url;
+      const rJson = await rResp.json() as {
+        video?: { url?: string; content_type?: string };
+        audio?: { url?: string; content_type?: string };
+        image?: { url?: string; content_type?: string };
+      };
+      const remote = rJson?.video ?? rJson?.audio ?? rJson?.image;
+      const remoteUrl = remote?.url;
       if (!remoteUrl) {
-        await supabase.from("generations").update({ status: "failed", error: "no video url" }).eq("id", row.id);
-        return { status: "failed" as const, url: null, error: "no video url" };
+        await supabase.from("generations").update({ status: "failed", error: "no output url" }).eq("id", row.id);
+        return { status: "failed" as const, url: null, error: "no output url" };
       }
       try {
         const dl = await fetch(remoteUrl);
         if (!dl.ok) throw new Error(`download ${dl.status}`);
         const bytes = new Uint8Array(await dl.arrayBuffer());
+        const ctype = remote?.content_type
+          ?? dl.headers.get("content-type")
+          ?? (rJson.audio ? "audio/mpeg" : rJson.image ? "image/png" : "video/mp4");
+        const ext = (ctype.split("/")[1] || "bin").split(";")[0];
         const yyyymm = new Date().toISOString().slice(0, 7).replace("-", "");
-        const path = `${userId}/${yyyymm}/${row.id}.mp4`;
+        const path = `${userId}/${yyyymm}/${row.id}.${ext}`;
         const { error: upErr } = await supabase.storage.from("generations")
-          .upload(path, bytes, { contentType: "video/mp4", upsert: false });
+          .upload(path, bytes, { contentType: ctype, upsert: false });
         if (upErr) throw new Error(upErr.message);
         const { data: signed } = await supabase.storage.from("generations")
           .createSignedUrl(path, 60 * 60 * 24 * 365);
@@ -231,7 +240,8 @@ export const pollGeneration = createServerFn({ method: "POST" })
     await supabase.from("generations").update({ status: "failed", error: errText }).eq("id", row.id);
     if (refund > 0) {
       await refundCredits(supabase, {
-        userId, amount: refund, reason: "refund:video", refId: row.id, idem: `refund:video:${row.id}`,
+        userId, amount: refund, reason: `refund:${row.kind}`,
+        refId: row.id, idem: `refund:${row.kind}:${row.id}`,
       });
     }
     return { status: "failed" as const, url: null, error: errText };

@@ -151,7 +151,7 @@ export const sendAgentMessage = createServerFn({ method: "POST" })
             .update({ status: "succeeded", asset_url: url, thumb_url: url })
             .eq("id", row.id);
           await consumeCredits(supabase, {
-            userId, amount: cost, reason: `agent:image`, refId: row.id, idem: `image:${row.id}`,
+            userId, amount: cost, reason: `agent:image`, refId: row.id, idem: `agent:image:${row.id}`,
           });
           return { ok: true, url, id: row.id, prompt, aspect };
         } catch (err) {
