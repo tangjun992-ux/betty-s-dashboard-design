@@ -18,6 +18,7 @@ import { AppShell } from "@/components/AppShell";
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { ToolPill } from "@/components/dashboard/ToolPill";
 import { MediaCard } from "@/components/dashboard/MediaCard";
+import { HomeComposer } from "@/components/dashboard/HomeComposer";
 
 import bannerEarn from "@/assets/banner-earn.jpg";
 import bannerInfluencers from "@/assets/banner-influencers.jpg";
@@ -86,8 +87,11 @@ const creatorExamples = [
 function Dashboard() {
   return (
     <AppShell>
-      <div className="pt-4 pb-12 space-y-10">
-        {/* Banner carousel — flush to top, peeks next slide */}
+      <div className="pt-6 pb-14 space-y-12">
+        {/* Home mini-composer */}
+        <HomeComposer />
+
+        {/* Banner carousel — peeks next slide */}
         <section>
           <div className="flex gap-5 overflow-x-auto scrollbar-hide pl-6 lg:pl-8 pr-6 lg:pr-8 pb-1">
             {banners.map((b) => (
