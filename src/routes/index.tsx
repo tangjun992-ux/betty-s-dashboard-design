@@ -19,6 +19,7 @@ import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import { ToolPill } from "@/components/dashboard/ToolPill";
 import { MediaCard } from "@/components/dashboard/MediaCard";
 import { RecentGenerations } from "@/components/dashboard/RecentGenerations";
+import { DashboardMotion } from "@/components/dashboard/DashboardMotion";
 
 
 import bannerEarn from "@/assets/banner-earn.jpg";
@@ -88,7 +89,7 @@ const creatorExamples = [
 function Dashboard() {
   return (
     <AppShell>
-      <div className="pt-6 pb-14 space-y-14">
+      <DashboardMotion><div className="pt-6 pb-14 space-y-14">
 
 
         {/* Banner carousel — peeks next slide */}
@@ -191,7 +192,7 @@ function Dashboard() {
             </div>
           </section>
         </div>
-      </div>
+      </div></DashboardMotion>
     </AppShell>
   );
 }
