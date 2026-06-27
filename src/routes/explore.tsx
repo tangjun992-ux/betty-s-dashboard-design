@@ -357,10 +357,10 @@ function DetailPanel({ card, onClose }: { card: Card; onClose: () => void }) {
           lighting, shot on {card.model}, 35mm, shallow depth of field, magazine cover composition.
         </div>
         <div className="flex gap-2">
-          <button className="flex-1 h-10 rounded-md bg-foreground text-background text-[13px] font-semibold inline-flex items-center justify-center gap-1.5 hover:opacity-90">
+          <button onClick={recreate} className="flex-1 h-10 rounded-md bg-foreground text-background text-[13px] font-semibold inline-flex items-center justify-center gap-1.5 hover:opacity-90">
             <RotateCcw className="size-3.5" /> Recreate
           </button>
-          <button className="flex-1 h-10 rounded-md bg-surface text-foreground text-[13px] font-medium inline-flex items-center justify-center gap-1.5 hover:bg-surface-hover">
+          <button onClick={recreate} className="flex-1 h-10 rounded-md bg-surface text-foreground text-[13px] font-medium inline-flex items-center justify-center gap-1.5 hover:bg-surface-hover">
             <Repeat2 className="size-3.5" /> Reuse
           </button>
         </div>
