@@ -5,10 +5,12 @@ import { SkeletonLoader } from "./SkeletonLoader";
 import { EmptyState } from "./EmptyState";
 import { GenerationCard } from "./GenerationCard";
 import { useRecentGenerations } from "@/hooks/use-recent-generations";
+import { useRealtimeLibrary } from "@/hooks/use-realtime-library";
 import { useSession } from "@/lib/use-session";
 
 export function RecentGenerations() {
   const { user, loading: authLoading } = useSession();
+  useRealtimeLibrary(user?.id);
   const { data, isLoading, isError, refetch } = useRecentGenerations(12);
 
   // Not signed in — soft prompt instead of empty grid
