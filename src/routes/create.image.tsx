@@ -429,7 +429,7 @@ function ImagePage() {
         </DialogContent>
       </Dialog>
       </div>
-      <CreateJobsRail kind="image" onReuse={(r) => { setPrompt(r.prompt ?? ""); if (r.model) setModelId(r.model); window.scrollTo({ top: 0, behavior: "smooth" }); }} />
+      <CreateJobsRail kind="image" onReuse={(r: { prompt: string | null; model: string }) => { setPrompt(r.prompt ?? ""); if (r.model) setModel(r.model); window.scrollTo({ top: 0, behavior: "smooth" }); }} />
       </div>
     </AppShell>
   );
