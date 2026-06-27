@@ -35,7 +35,7 @@ export const Route = createFileRoute("/create/video")({
   component: VideoPage,
 });
 
-const DEFAULT_MODEL = VIDEO_MODELS.find((m) => m.key === "seedance-2-fast") ?? VIDEO_MODELS[0];
+const DEFAULT_MODEL = VIDEO_MODELS.find((m) => m.key === "seedance-2") ?? VIDEO_MODELS[0];
 
 function VideoPage() {
   const navigate = useNavigate();
@@ -48,9 +48,10 @@ function VideoPage() {
   const [prompt, setPrompt] = useState<string>(search.prompt ?? "");
   const [model, setModel] = useState(initialModel);
   const [aspect, setAspect] = useState<Aspect>(
-    (search.aspect as Aspect) ?? "9:16",
+    (search.aspect as Aspect) ?? "16:9",
   );
-  const [duration, setDuration] = useState<number>(15);
+  const [duration, setDuration] = useState<number>(8);
+
   const [resolution, setResolution] = useState<VideoResolution>("720p");
   const [batch, setBatch] = useState(1);
   const [advanced, setAdvanced] = useState<AdvancedOptions>({
