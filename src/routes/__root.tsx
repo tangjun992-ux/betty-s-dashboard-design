@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { initAnalytics, identify, reset as resetAnalytics } from "../lib/analytics";
 
 function NotFoundComponent() {
   return (
