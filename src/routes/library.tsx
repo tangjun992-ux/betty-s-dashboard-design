@@ -207,6 +207,8 @@ function LibraryPage() {
           )}
         </div>
       </div>
+      {user && <GlobalDropOverlay onFiles={onFiles} />}
+      <UploadsPanel items={uploader.items} onRemove={uploader.remove} onClearDone={uploader.clearDone} />
     </AppShell>
   );
 }
