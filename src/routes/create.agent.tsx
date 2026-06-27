@@ -70,6 +70,7 @@ function AgentPage() {
       value={input}
       onChange={setInput}
       onSubmit={onSend}
+      busy={busy}
       leading={
         <div className="flex flex-col gap-1.5">
           <Popover>
@@ -94,16 +95,6 @@ function AgentPage() {
         </div>
       }
       options={<><ModePill mode={mode} onChange={setMode} /><ModelPill model={model} onChange={setModel} /></>}
-      trailing={
-        <button
-          onClick={onSend}
-          disabled={!input.trim() || busy}
-          className="size-8 grid place-items-center rounded-md bg-foreground text-background disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90"
-          aria-label="Send"
-        >
-          {busy ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-        </button>
-      }
     />
   );
 
@@ -113,11 +104,12 @@ function AgentPage() {
         <CreateHub
           title="What do you want to create?"
           chips={[
-            { label: "Help Prompt", icon: Feather, onClick: () => setInput("Help me write a great prompt for ") },
-            { label: "Create Content", icon: FileText, onClick: () => setInput("Create a content plan about ") },
-            { label: "Help Ideate", icon: Lightbulb, onClick: () => setInput("Brainstorm 5 ideas for ") },
-            { label: "Generate Audio", icon: Music, onClick: () => setInput("Write a short voiceover script for ") },
+            { label: "Help Prompt", icon: Feather },
+            { label: "Create Content", icon: FileText },
+            { label: "Help Ideate", icon: Lightbulb },
+            { label: "Generate Audio", icon: Music },
           ]}
+
           composer={composer}
           appsTitle="Manual Apps"
           appsIcon={MessagesSquare}
