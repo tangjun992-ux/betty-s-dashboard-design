@@ -27,6 +27,23 @@ export const Route = createFileRoute("/create/agent")({
 
 type ChatMsg = { role: "user" | "assistant"; content: string };
 
+function renderAssistantContent(content: string) {
+  const re = /!\[([^\]]*)\]\(([^)]+)\)/g;
+  const out: React.ReactNode[] = [];
+  let last = 0; let m: RegExpExecArray | null; let i = 0;
+  while ((m = re.exec(content)) !== null) {
+    if (m.index > last) out.push(<span key={`t${i}`}>{content.slice(last, m.index)}</span>);
+    out.push(
+      <a key={`i${i}`} href={m[2]} target="_blank" rel="noreferrer" className="block my-2 rounded-xl overflow-hidden border border-border bg-background max-w-sm">
+        <img src={m[2]} alt={m[1]} className="w-full h-auto block" loading="lazy" />
+      </a>
+    );
+    last = m.index + m[0].length; i++;
+  }
+  if (last < content.length) out.push(<span key={`t${i}`}>{content.slice(last)}</span>);
+  return out.length ? out : content;
+}
+
 function AgentPage() {
   const { user } = useSession();
   const navigate = useNavigate();
