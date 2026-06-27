@@ -22,6 +22,8 @@ export const generateMotion = createServerFn({ method: "POST" })
     if (!falKey) throw new Error("Motion service not configured (FAL_KEY missing)");
     const { supabase, userId } = context;
 
+    await enforceRateLimit(supabase, userId, "motion:submit", 8, 60);
+
     const cost = data.mode === "Pro" ? 120 : 80;
 
     if (!data.videoPath.startsWith(`${userId}/`) || !data.imagePath.startsWith(`${userId}/`)) {
