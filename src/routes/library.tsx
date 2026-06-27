@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import {
   FolderOpen,
@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { listMyGenerations } from "@/lib/generations.functions";
 import { useSession } from "@/lib/use-session";
+import { useUploader } from "@/lib/use-uploader";
+import { UploadButton, GlobalDropOverlay, UploadsPanel } from "@/components/library/UploadDropzone";
 
 export const Route = createFileRoute("/library")({
   head: () => ({
@@ -46,12 +48,22 @@ function LibraryPage() {
   const [tab, setTab] = useState<Kind>("all");
   const [view, setView] = useState<View>("grid");
   const fetcher = useServerFn(listMyGenerations);
+  const queryClient = useQueryClient();
 
   const q = useQuery({
     queryKey: ["my-generations", user?.id],
     queryFn: () => fetcher(),
     enabled: !!user,
   });
+
+  const uploader = useUploader();
+  const onFiles = useCallback((files: File[]) => uploader.start(files), [uploader]);
+
+  // Refresh grid when an upload completes
+  const doneIds = uploader.items.filter((i) => i.status === "done").map((i) => i.generationId ?? i.id).join(",");
+  useEffect(() => {
+    if (doneIds) queryClient.invalidateQueries({ queryKey: ["my-generations", user?.id] });
+  }, [doneIds, queryClient, user?.id]);
 
   const all = q.data ?? [];
   const counts = useMemo(() => {
@@ -93,6 +105,7 @@ function LibraryPage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
+              <UploadButton onFiles={onFiles} />
               <Link
                 to="/create/image"
                 className="h-9 px-4 rounded-full bg-[image:var(--gradient-brand)] text-brand-foreground text-[13px] font-semibold inline-flex items-center shadow-[var(--shadow-glow)]"
@@ -194,6 +207,8 @@ function LibraryPage() {
           )}
         </div>
       </div>
+      {user && <GlobalDropOverlay onFiles={onFiles} />}
+      <UploadsPanel items={uploader.items} onRemove={uploader.remove} onClearDone={uploader.clearDone} />
     </AppShell>
   );
 }
