@@ -41,6 +41,8 @@ export const removeBackground = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     if (!data.assetPath.startsWith(`${userId}/`)) throw new Error("Invalid path");
 
+    await enforceRateLimit(supabase, userId, "bgr:submit", 20, 60);
+
     const { data: prof } = await supabase
       .from("profiles").select("credits").eq("id", userId).maybeSingle();
     if (!prof || prof.credits < COST) throw new Error(`Need ${COST} credits.`);
