@@ -145,7 +145,7 @@ function VideoPage() {
           toast.error(r.error || "Video generation failed", { id: toastId });
           return;
         }
-        if (r.status === "processing" || r.status === "running") setPhase("running");
+        if (r.status === "queued" || r.status === "running") setPhase(r.status);
       } catch (e) {
         if (attempts > 80) {
           stopTimer();
