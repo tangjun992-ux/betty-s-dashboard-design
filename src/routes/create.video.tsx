@@ -69,14 +69,47 @@ function VideoPage() {
       return [...prev, el];
     });
   }
-  const [busy, setBusy] = useState(false);
+  type Phase = "idle" | "queued" | "running" | "finalizing" | "completed" | "failed" | "cancelled";
+  const [phase, setPhase] = useState<Phase>("idle");
+  const [progress, setProgress] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
+  const [errMsg, setErrMsg] = useState<string | null>(null);
+  const busy = phase === "queued" || phase === "running" || phase === "finalizing";
   const [result, setResult] = useState<string | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const submit = useServerFn(generateVideo);
   const poll = useServerFn(pollGeneration);
   const pollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const cancelledRef = useRef(false);
 
-  useEffect(() => () => { if (pollTimer.current) clearTimeout(pollTimer.current); }, []);
+  useEffect(() => () => {
+    if (pollTimer.current) clearTimeout(pollTimer.current);
+    if (timerRef.current) clearInterval(timerRef.current);
+  }, []);
+
+  function startTimer() {
+    const startedAt = Date.now();
+    setElapsed(0); setProgress(2);
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      const e = (Date.now() - startedAt) / 1000;
+      setElapsed(e);
+      // soft asymptote toward 92% over ~90s
+      setProgress((p) => (p >= 92 ? 92 : Math.min(92, 2 + (90 * e) / (e + 45))));
+    }, 200);
+  }
+  function stopTimer() {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+  }
+  function onCancel() {
+    cancelledRef.current = true;
+    if (pollTimer.current) { clearTimeout(pollTimer.current); pollTimer.current = null; }
+    stopTimer();
+    setPhase("cancelled"); setErrMsg("Cancelled — job may still finish in Library");
+    setJobId(null);
+    toast.message("Cancelled");
+  }
 
   // Coerce params when model changes
   useEffect(() => {
