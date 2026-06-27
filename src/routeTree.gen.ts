@@ -31,6 +31,7 @@ import { Route as CreateImageEditorRouteImport } from './routes/create.image-edi
 import { Route as CreateImageRouteImport } from './routes/create.image'
 import { Route as CreateExtractRouteImport } from './routes/create.extract'
 import { Route as CreateElementsRouteImport } from './routes/create.elements'
+import { Route as CreateBgRemoveRouteImport } from './routes/create.bg-remove'
 import { Route as CreateAvatarRouteImport } from './routes/create.avatar'
 import { Route as CreateAudioRouteImport } from './routes/create.audio'
 import { Route as CreateAgentRouteImport } from './routes/create.agent'
@@ -149,6 +150,11 @@ const CreateElementsRoute = CreateElementsRouteImport.update({
   path: '/elements',
   getParentRoute: () => CreateRoute,
 } as any)
+const CreateBgRemoveRoute = CreateBgRemoveRouteImport.update({
+  id: '/bg-remove',
+  path: '/bg-remove',
+  getParentRoute: () => CreateRoute,
+} as any)
 const CreateAvatarRoute = CreateAvatarRouteImport.update({
   id: '/avatar',
   path: '/avatar',
@@ -205,6 +211,7 @@ export interface FileRoutesByFullPath {
   '/create/agent': typeof CreateAgentRoute
   '/create/audio': typeof CreateAudioRoute
   '/create/avatar': typeof CreateAvatarRoute
+  '/create/bg-remove': typeof CreateBgRemoveRoute
   '/create/elements': typeof CreateElementsRoute
   '/create/extract': typeof CreateExtractRoute
   '/create/image': typeof CreateImageRoute
@@ -236,6 +243,7 @@ export interface FileRoutesByTo {
   '/create/agent': typeof CreateAgentRoute
   '/create/audio': typeof CreateAudioRoute
   '/create/avatar': typeof CreateAvatarRoute
+  '/create/bg-remove': typeof CreateBgRemoveRoute
   '/create/elements': typeof CreateElementsRoute
   '/create/extract': typeof CreateExtractRoute
   '/create/image': typeof CreateImageRoute
@@ -268,6 +276,7 @@ export interface FileRoutesById {
   '/create/agent': typeof CreateAgentRoute
   '/create/audio': typeof CreateAudioRoute
   '/create/avatar': typeof CreateAvatarRoute
+  '/create/bg-remove': typeof CreateBgRemoveRoute
   '/create/elements': typeof CreateElementsRoute
   '/create/extract': typeof CreateExtractRoute
   '/create/image': typeof CreateImageRoute
@@ -301,6 +310,7 @@ export interface FileRouteTypes {
     | '/create/agent'
     | '/create/audio'
     | '/create/avatar'
+    | '/create/bg-remove'
     | '/create/elements'
     | '/create/extract'
     | '/create/image'
@@ -332,6 +342,7 @@ export interface FileRouteTypes {
     | '/create/agent'
     | '/create/audio'
     | '/create/avatar'
+    | '/create/bg-remove'
     | '/create/elements'
     | '/create/extract'
     | '/create/image'
@@ -363,6 +374,7 @@ export interface FileRouteTypes {
     | '/create/agent'
     | '/create/audio'
     | '/create/avatar'
+    | '/create/bg-remove'
     | '/create/elements'
     | '/create/extract'
     | '/create/image'
@@ -552,6 +564,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreateElementsRouteImport
       parentRoute: typeof CreateRoute
     }
+    '/create/bg-remove': {
+      id: '/create/bg-remove'
+      path: '/bg-remove'
+      fullPath: '/create/bg-remove'
+      preLoaderRoute: typeof CreateBgRemoveRouteImport
+      parentRoute: typeof CreateRoute
+    }
     '/create/avatar': {
       id: '/create/avatar'
       path: '/avatar'
@@ -608,6 +627,7 @@ interface CreateRouteChildren {
   CreateAgentRoute: typeof CreateAgentRoute
   CreateAudioRoute: typeof CreateAudioRoute
   CreateAvatarRoute: typeof CreateAvatarRoute
+  CreateBgRemoveRoute: typeof CreateBgRemoveRoute
   CreateElementsRoute: typeof CreateElementsRoute
   CreateExtractRoute: typeof CreateExtractRoute
   CreateImageRoute: typeof CreateImageRoute
@@ -623,6 +643,7 @@ const CreateRouteChildren: CreateRouteChildren = {
   CreateAgentRoute: CreateAgentRoute,
   CreateAudioRoute: CreateAudioRoute,
   CreateAvatarRoute: CreateAvatarRoute,
+  CreateBgRemoveRoute: CreateBgRemoveRoute,
   CreateElementsRoute: CreateElementsRoute,
   CreateExtractRoute: CreateExtractRoute,
   CreateImageRoute: CreateImageRoute,

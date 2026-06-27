@@ -16,6 +16,7 @@ import {
   toggleFavorite, moveToFolder, deleteItems,
 } from "@/lib/library.functions";
 import { useSession } from "@/lib/use-session";
+import { useRealtimeLibrary } from "@/hooks/use-realtime-library";
 import { useUploader } from "@/lib/use-uploader";
 import { UploadButton, GlobalDropOverlay, UploadsPanel } from "@/components/library/UploadDropzone";
 import { PreviewModal, type PreviewItem } from "@/components/library/PreviewModal";
@@ -51,6 +52,7 @@ type Item = PreviewItem & { like_count?: number | null; status?: string | null; 
 
 function LibraryPage() {
   const { user, loading } = useSession();
+  useRealtimeLibrary(user?.id);
   const [tab, setTab] = useState<Kind>("all");
   const [view, setView] = useState<View>("grid");
   const [query, setQuery] = useState("");
