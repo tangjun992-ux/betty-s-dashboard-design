@@ -166,25 +166,46 @@ function LibraryPage() {
                 );
               })}
             </div>
-            <div className="ml-auto inline-flex rounded-full border border-border p-0.5 bg-surface">
-              <button
-                onClick={() => setView("grid")}
-                aria-pressed={view === "grid"}
-                className={`size-7 grid place-items-center rounded-full transition-colors ${
-                  view === "grid" ? "bg-background text-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <LayoutGrid className="size-3.5" />
-              </button>
-              <button
-                onClick={() => setView("masonry")}
-                aria-pressed={view === "masonry"}
-                className={`size-7 grid place-items-center rounded-full transition-colors ${
-                  view === "masonry" ? "bg-background text-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Rows3 className="size-3.5" />
-              </button>
+            <div className="ml-auto flex items-center gap-2">
+              <div className="relative hidden sm:block">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search prompts, models…"
+                  className="h-8 w-56 md:w-72 pl-8 pr-7 rounded-full bg-surface border border-border text-[12.5px] placeholder:text-muted-foreground/70 focus:outline-none focus:border-foreground/30 focus:bg-background transition-colors"
+                />
+                {query && (
+                  <button
+                    onClick={() => setQuery("")}
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 size-5 grid place-items-center rounded-full text-muted-foreground hover:text-foreground hover:bg-background"
+                    aria-label="Clear search"
+                  >
+                    <X className="size-3" />
+                  </button>
+                )}
+              </div>
+              <div className="inline-flex rounded-full border border-border p-0.5 bg-surface">
+                <button
+                  onClick={() => setView("grid")}
+                  aria-pressed={view === "grid"}
+                  className={`size-7 grid place-items-center rounded-full transition-colors ${
+                    view === "grid" ? "bg-background text-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <LayoutGrid className="size-3.5" />
+                </button>
+                <button
+                  onClick={() => setView("masonry")}
+                  aria-pressed={view === "masonry"}
+                  className={`size-7 grid place-items-center rounded-full transition-colors ${
+                    view === "masonry" ? "bg-background text-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Rows3 className="size-3.5" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
