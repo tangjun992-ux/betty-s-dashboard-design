@@ -193,6 +193,9 @@ function AgentPage() {
         </div>
       )}
       <AssistantSettings open={settingsOpen} onOpenChange={setSettingsOpen} />
+      </div>
+      <CreateJobsRail onReuse={(r) => setInput(r.prompt ?? "")} />
+      </div>
     </AppShell>
   );
 }
