@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Sparkles,
   Image as ImageIcon,
@@ -45,9 +45,9 @@ export const Route = createFileRoute("/")({
 });
 
 const banners = [
-  { image: bannerEarn, tag: "New", tagClass: "bg-emerald-500/15 text-emerald-400", title: "Get paid to create — join a Betty Earn campaign" },
-  { image: bannerInfluencers, tag: "Tutorial", tagClass: "bg-sky-500/15 text-sky-400", title: "Learn how to create realistic AI UGC" },
-  { image: bannerTutorial, tag: "Tutorial", tagClass: "bg-sky-500/15 text-sky-400", title: "Learn to create consistent long-form videos" },
+  { image: bannerEarn, tag: "New", tagClass: "bg-emerald-500/15 text-emerald-400", title: "Get paid to create — join a Betty Earn campaign", to: "/earn" },
+  { image: bannerInfluencers, tag: "Tutorial", tagClass: "bg-sky-500/15 text-sky-400", title: "Learn how to create realistic AI UGC", to: "/explore" },
+  { image: bannerTutorial, tag: "Tutorial", tagClass: "bg-sky-500/15 text-sky-400", title: "Learn to create consistent long-form videos", to: "/explore" },
 ];
 
 const popularTools = [
@@ -62,19 +62,19 @@ const popularTools = [
 ];
 
 const videoTools = [
-  { image: toolSeedance, tag: "Video", title: "Seedance 2.0 Omni-Video", description: "Generate videos with multi-modal input, lip sync, and multi-shot narrative." },
-  { image: bannerTutorial, tag: "Video", title: "Studio Lip-Syncing", description: "Create satire clips, avatar videos, or a personal clone with our lip-syncing technology.", hasExamples: true },
-  { image: toolMotion, tag: "Video", title: "Motion Control", description: "Generate videos with precise motion guidance using reference videos and characters." },
-  { image: toolAvatar, tag: "Video", title: "Talking Avatar", description: "Image and audio to video creation. Turn any image into a talking avatar with lip-sync." },
-  { image: toolVideogen, tag: "Video", title: "Video Generation", description: "Create viral content, advertisements, and more with our AI-powered video generator.", hasExamples: true },
+  { image: toolSeedance, tag: "Video", title: "Seedance 2.0 Omni-Video", description: "Generate videos with multi-modal input, lip sync, and multi-shot narrative.", to: "/create/video" },
+  { image: bannerTutorial, tag: "Video", title: "Studio Lip-Syncing", description: "Create satire clips, avatar videos, or a personal clone with our lip-syncing technology.", hasExamples: true, to: "/create/lipsync", examplesTo: "/explore" },
+  { image: toolMotion, tag: "Video", title: "Motion Control", description: "Generate videos with precise motion guidance using reference videos and characters.", to: "/create/motion" },
+  { image: toolAvatar, tag: "Video", title: "Talking Avatar", description: "Image and audio to video creation. Turn any image into a talking avatar with lip-sync.", to: "/create/avatar" },
+  { image: toolVideogen, tag: "Video", title: "Video Generation", description: "Create viral content, advertisements, and more with our AI-powered video generator.", hasExamples: true, to: "/create/video", examplesTo: "/explore" },
 ];
 
 const imageTools = [
-  { image: toolImagegen, tag: "Image", title: "Pro Image Editor", description: "Advanced AI-powered image editing tools for professional results." },
-  { image: toolProduct, tag: "Image", title: "Stunning Product Shots", description: "Generate a batch of professional images of your product with AI in minutes." },
-  { image: toolHeadshot, tag: "Image", title: "Professional Headshots", description: "Generate polished, professional headshots perfect for LinkedIn and resumes." },
-  { image: toolAvatar, tag: "Image", title: "AI Photo Packs", description: "Choose from a variety of photo packs to generate a set of photos tailored to your needs." },
-  { image: toolImagegen, tag: "Image", title: "Pro Image Generation", description: "Create realistic UGC content and product visuals for your social media.", hasExamples: true },
+  { image: toolImagegen, tag: "Image", title: "Pro Image Editor", description: "Advanced AI-powered image editing tools for professional results.", to: "/create/image" },
+  { image: toolProduct, tag: "Image", title: "Stunning Product Shots", description: "Generate a batch of professional images of your product with AI in minutes.", to: "/create/image" },
+  { image: toolHeadshot, tag: "Image", title: "Professional Headshots", description: "Generate polished, professional headshots perfect for LinkedIn and resumes.", to: "/create/image" },
+  { image: toolAvatar, tag: "Image", title: "AI Photo Packs", description: "Choose from a variety of photo packs to generate a set of photos tailored to your needs.", to: "/create/image" },
+  { image: toolImagegen, tag: "Image", title: "Pro Image Generation", description: "Create realistic UGC content and product visuals for your social media.", hasExamples: true, to: "/create/image", examplesTo: "/explore" },
 ];
 
 const creatorExamples = [
@@ -91,7 +91,7 @@ function Dashboard() {
         <section>
           <div className="flex gap-5 overflow-x-auto scrollbar-hide pl-6 lg:pl-8 pr-6 lg:pr-8 pb-1">
             {banners.map((b) => (
-              <a key={b.title} href="#" className="group shrink-0 w-[min(760px,calc(100vw-260px))]">
+              <Link key={b.title} to={b.to} className="group shrink-0 w-[min(760px,calc(100vw-260px))]">
                 <div className="relative aspect-[16/6] rounded-2xl overflow-hidden">
                   <img src={b.image} alt={b.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]" />
                 </div>
@@ -99,7 +99,7 @@ function Dashboard() {
                   <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10.5px] font-semibold uppercase tracking-wide ${b.tagClass}`}>{b.tag}</span>
                   <h3 className="text-[14px] font-medium text-foreground/90 group-hover:text-foreground">{b.title}</h3>
                 </div>
-              </a>
+              </Link>
             ))}
           </div>
         </section>
