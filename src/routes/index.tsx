@@ -87,7 +87,7 @@ const creatorExamples = [
 function Dashboard() {
   return (
     <AppShell>
-      <div className="pt-6 pb-14 space-y-12">
+      <div className="pt-6 pb-14 space-y-14">
 
 
         {/* Banner carousel — peeks next slide */}
