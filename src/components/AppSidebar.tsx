@@ -2,8 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Home, Compass, FolderOpen, Sparkles, Image as ImageIcon, Video, Mic2,
   Activity, AudioLines, Maximize2, ScanLine, ChevronDown, Plus, Search,
-  PanelLeft, HelpCircle, MessageCircle, Languages, Gift, Wrench, Heart,
-  Wand2, Film, Boxes,
+  PanelLeft, Heart, Wand2, Film, Boxes,
 } from "lucide-react";
 import { useState } from "react";
 import { useSidebarState } from "@/components/sidebar-state";
@@ -30,10 +29,6 @@ const toolsNav = [
   { to: "/create/upscale", icon: Maximize2, label: "Upscaler" },
 ] as const;
 
-const bottomNav = [
-  { to: "/earn", icon: Gift, label: "Earn" },
-  { to: "/tools", icon: Wrench, label: "All Tools" },
-] as const;
 
 export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -107,24 +102,10 @@ export function AppSidebar() {
               </Link>
             </Section>
           )}
-
-          <div className="space-y-0.5">
-            {bottomNav.map((item) => (
-              <NavLink key={item.to} {...item} active={pathname === item.to} collapsed={collapsed} />
-            ))}
-          </div>
         </nav>
 
-        <div className="p-3 space-y-2.5">
-          {!collapsed && (
-            <div className="flex items-center justify-between px-1.5 text-muted-foreground">
-              <button className="hover:text-foreground" aria-label="Discord"><MessageCircle className="size-4" /></button>
-              <button className="hover:text-foreground" aria-label="Social">𝕏</button>
-              <button className="hover:text-foreground" aria-label="Search"><Search className="size-4" /></button>
-              <button className="hover:text-foreground" aria-label="Help"><HelpCircle className="size-4" /></button>
-              <button className="hover:text-foreground" aria-label="Language"><Languages className="size-4" /></button>
-            </div>
-          )}
+        <div className="p-3">
+
           <Link
             to="/auth"
             className={`w-full h-10 rounded-xl bg-surface hover:bg-surface-hover border border-border text-sm font-medium flex items-center justify-center gap-2 transition ${collapsed ? "px-0" : ""}`}
