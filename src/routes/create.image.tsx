@@ -229,6 +229,8 @@ function ImagePage() {
 
   return (
     <AppShell>
+      <div className="flex min-h-full">
+      <div className="flex-1 min-w-0">
       <CreateHub
         title="Create • Edit • Combine Pro Images"
         chips={[
