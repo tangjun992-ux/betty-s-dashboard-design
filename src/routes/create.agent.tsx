@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Sparkles, Plus, Settings2, Feather, FileText, MessagesSquare,
   Lightbulb, Music, ImagePlus, Upload, Loader2, User as UserIcon,
