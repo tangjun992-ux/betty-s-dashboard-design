@@ -14,6 +14,7 @@ import {
   type AdvancedOptions,
 } from "@/components/create/VideoOptionPopovers";
 import { FrameUploader } from "@/components/create/FrameUploader";
+import { ElementPicker, ElementChips, injectElementToken, removeElementToken, type ElementRow } from "@/components/create/ElementPicker";
 import { generateVideo, pollGeneration } from "@/lib/video.functions";
 import { VIDEO_MODELS, type Aspect, type VideoResolution } from "@/lib/model-registry";
 import { useSession } from "@/lib/use-session";
@@ -44,6 +45,15 @@ function VideoPage() {
   });
   const [startFrameUrl, setStartFrameUrl] = useState<string | null>(null);
   const [endFrameUrl, setEndFrameUrl] = useState<string | null>(null);
+  const [elements, setElements] = useState<ElementRow[]>([]);
+  function toggleElement(el: ElementRow) {
+    setElements((prev) => {
+      const has = prev.some((p) => p.id === el.id);
+      if (has) { setPrompt((p) => removeElementToken(p, el.name)); return prev.filter((p) => p.id !== el.id); }
+      setPrompt((p) => injectElementToken(p, el.name));
+      return [...prev, el];
+    });
+  }
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
@@ -163,6 +173,7 @@ function VideoPage() {
                   <ResolutionPopover options={model.resolutions} value={resolution} onChange={setResolution} />
                   <DurationPopover options={model.durations} value={duration} onChange={setDuration} />
                   <BatchPopover max={4} value={batch} onChange={setBatch} />
+                  <ElementPicker selected={elements} onToggle={toggleElement} />
                   <MorePopover value={advanced} onChange={setAdvanced} />
                   <div className="ml-auto flex items-center gap-1.5 text-foreground pr-1">
                     <Coins className="size-3.5 text-amber-400" />
