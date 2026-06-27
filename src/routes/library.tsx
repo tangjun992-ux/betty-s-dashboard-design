@@ -48,12 +48,22 @@ function LibraryPage() {
   const [tab, setTab] = useState<Kind>("all");
   const [view, setView] = useState<View>("grid");
   const fetcher = useServerFn(listMyGenerations);
+  const queryClient = useQueryClient();
 
   const q = useQuery({
     queryKey: ["my-generations", user?.id],
     queryFn: () => fetcher(),
     enabled: !!user,
   });
+
+  const uploader = useUploader();
+  const onFiles = useCallback((files: File[]) => uploader.start(files), [uploader]);
+
+  // Refresh grid when an upload completes
+  const doneIds = uploader.items.filter((i) => i.status === "done").map((i) => i.generationId ?? i.id).join(",");
+  useEffect(() => {
+    if (doneIds) queryClient.invalidateQueries({ queryKey: ["my-generations", user?.id] });
+  }, [doneIds, queryClient, user?.id]);
 
   const all = q.data ?? [];
   const counts = useMemo(() => {
