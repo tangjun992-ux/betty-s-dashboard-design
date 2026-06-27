@@ -73,35 +73,38 @@ function AgentPage() {
 
   const composer = (
     <Composer
-      placeholder={messages.length ? "Reply to Betty…" : "Help me outline"}
+      placeholder={messages.length ? "Reply to Betty…" : "Describe what you want to make…"}
       value={input}
       onChange={setInput}
       onSubmit={onSend}
       busy={busy}
       leading={
-        <div className="flex flex-col gap-1.5">
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="size-8 grid place-items-center rounded-md hover:bg-surface-hover text-muted-foreground" aria-label="Attach">
-                <Plus className="size-4" />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent side="top" align="start" sideOffset={8} className="w-[200px] p-1.5 rounded-xl bg-[#101013] border-border/60 shadow-2xl">
-              <button className="w-full flex items-center gap-3 h-10 px-3 rounded-lg text-[13.5px] text-foreground hover:bg-surface-hover transition-colors">
-                <ImagePlus className="size-4 text-muted-foreground" /> Select Media
-              </button>
-              <label className="w-full flex items-center gap-3 h-10 px-3 rounded-lg text-[13.5px] text-foreground hover:bg-surface-hover transition-colors cursor-pointer">
-                <Upload className="size-4 text-muted-foreground" /> Upload File
-                <input type="file" hidden />
-              </label>
-            </PopoverContent>
-          </Popover>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="size-8 grid place-items-center rounded-md hover:bg-surface-hover text-muted-foreground self-end" aria-label="Attach">
+              <Plus className="size-4" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent side="top" align="start" sideOffset={8} className="w-[200px] p-1.5 rounded-xl bg-[#101013] border-border/60 shadow-2xl">
+            <button className="w-full flex items-center gap-3 h-10 px-3 rounded-lg text-[13.5px] text-foreground hover:bg-surface-hover transition-colors">
+              <ImagePlus className="size-4 text-muted-foreground" /> Select Media
+            </button>
+            <label className="w-full flex items-center gap-3 h-10 px-3 rounded-lg text-[13.5px] text-foreground hover:bg-surface-hover transition-colors cursor-pointer">
+              <Upload className="size-4 text-muted-foreground" /> Upload File
+              <input type="file" hidden />
+            </label>
+          </PopoverContent>
+        </Popover>
+      }
+      options={
+        <>
           <button onClick={() => setSettingsOpen(true)} className="size-8 grid place-items-center rounded-md hover:bg-surface-hover text-muted-foreground" aria-label="Assistant Settings">
             <Settings2 className="size-4" />
           </button>
-        </div>
+          <ModePill mode={mode} onChange={setMode} />
+          <ModelPill model={model} onChange={setModel} />
+        </>
       }
-      options={<><ModePill mode={mode} onChange={setMode} /><ModelPill model={model} onChange={setModel} /></>}
     />
   );
 
