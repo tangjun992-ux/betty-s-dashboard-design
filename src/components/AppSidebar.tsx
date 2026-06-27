@@ -2,8 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Home, Compass, FolderOpen, Sparkles, Image as ImageIcon, Video, Mic2,
   Activity, AudioLines, Maximize2, ScanLine, ChevronDown, Plus, Search,
-  PanelLeft, HelpCircle, MessageCircle, Languages, Gift, Wrench, Heart,
-  Wand2, Film, Boxes,
+  PanelLeft, Heart, Wand2, Film, Boxes,
 } from "lucide-react";
 import { useState } from "react";
 import { useSidebarState } from "@/components/sidebar-state";
@@ -30,10 +29,6 @@ const toolsNav = [
   { to: "/create/upscale", icon: Maximize2, label: "Upscaler" },
 ] as const;
 
-const bottomNav = [
-  { to: "/earn", icon: Gift, label: "Earn" },
-  { to: "/tools", icon: Wrench, label: "All Tools" },
-] as const;
 
 export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
