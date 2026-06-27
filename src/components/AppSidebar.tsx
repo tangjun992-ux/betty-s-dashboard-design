@@ -3,6 +3,7 @@ import {
   Home, Compass, FolderOpen, Sparkles, Image as ImageIcon, Video, Mic2,
   Activity, AudioLines, Maximize2, ScanLine, ChevronDown, Plus, Search,
   PanelLeft, HelpCircle, MessageCircle, Languages, Gift, Wrench, Heart,
+  Wand2, Film, Boxes,
 } from "lucide-react";
 import { useState } from "react";
 import { useSidebarState } from "@/components/sidebar-state";
@@ -19,11 +20,14 @@ const toolsNav = [
   { to: "/create/agent", icon: Sparkles, label: "Agent" },
   { to: "/create/image", icon: ImageIcon, label: "Image" },
   { to: "/create/video", icon: Video, label: "Video" },
+  { to: "/create/motion", icon: Activity, label: "Motion Sync" },
   { to: "/create/lipsync", icon: Mic2, label: "Lipsync" },
-  { to: "/create/motion", icon: Activity, label: "Motion" },
-  { to: "/create/audio", icon: AudioLines, label: "Audio" },
-  { to: "/create/upscale", icon: Maximize2, label: "Upscaler" },
+  { to: "/create/image-editor", icon: Wand2, label: "Image Editor" },
+  { to: "/create/timeline", icon: Film, label: "Timeline" },
   { to: "/create/extract", icon: ScanLine, label: "Extractor" },
+  { to: "/create/audio", icon: AudioLines, label: "Audio" },
+  { to: "/create/elements", icon: Boxes, label: "My Elements" },
+  { to: "/create/upscale", icon: Maximize2, label: "Upscaler" },
 ] as const;
 
 const bottomNav = [
