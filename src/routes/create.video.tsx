@@ -19,6 +19,7 @@ import { ElementPicker, ElementChips, injectElementToken, removeElementToken, ty
 import { generateVideo, pollGeneration } from "@/lib/video.functions";
 import { VIDEO_MODELS, type Aspect, type VideoResolution } from "@/lib/model-registry";
 import { useSession } from "@/lib/use-session";
+import { track } from "@/lib/analytics";
 import toolSeedance from "@/assets/tool-seedance.jpg";
 import bannerTutorial from "@/assets/banner-tutorial.jpg";
 import toolMotion from "@/assets/tool-motion.jpg";
