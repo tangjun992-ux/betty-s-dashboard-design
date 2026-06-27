@@ -62,6 +62,7 @@ const popularTools = [
   { icon: AudioLines, label: "Audio", tone: "zinc" as const, to: "/create/audio" },
   { icon: ScanLine, label: "Extractor", tone: "zinc" as const, to: "/create/extract" },
   { icon: Maximize2, label: "Upscaler", tone: "amber" as const, to: "/create/upscale" },
+  { icon: Scissors, label: "BG Remover", tone: "emerald" as const, to: "/create/bg-remove" },
 ];
 
 const videoTools = [
