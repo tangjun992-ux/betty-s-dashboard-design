@@ -56,6 +56,8 @@ export const generateVideo = createServerFn({ method: "POST" })
     if (!falKey) throw new Error("Video service not configured (FAL_KEY missing)");
     const { supabase, userId } = context;
 
+    await enforceRateLimit(supabase, userId, "video:submit", 10, 60);
+
     const model = findVideoModel(data.model);
     if (!model) throw new Error(`Unsupported video model: ${data.model}`);
     if (!model.aspects.includes(data.aspect as never)) {
