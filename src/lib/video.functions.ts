@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { consumeCredits, refundCredits } from "./credits.server";
 import { findVideoModel, VIDEO_MODELS } from "./model-registry";
 
 const VideoInput = z.object({
@@ -135,10 +136,9 @@ export const generateVideo = createServerFn({ method: "POST" })
       throw new Error("Video provider did not return a request id");
     }
 
-    await supabase.from("credits_ledger").insert({
-      user_id: userId, delta: -cost, reason: `video:${model.key}`, ref_id: row.id,
+    await consumeCredits(supabase, {
+      userId, amount: cost, reason: `video:${model.key}`, refId: row.id, idem: `video:${row.id}`,
     });
-    await supabase.from("profiles").update({ credits: prof.credits - cost }).eq("id", userId);
 
     await supabase.from("generations").update({
       status: "running",
@@ -230,11 +230,9 @@ export const pollGeneration = createServerFn({ method: "POST" })
     const refund = params.cost ?? 0;
     await supabase.from("generations").update({ status: "failed", error: errText }).eq("id", row.id);
     if (refund > 0) {
-      await supabase.from("credits_ledger").insert({
-        user_id: userId, delta: refund, reason: "refund_video", ref_id: row.id,
+      await refundCredits(supabase, {
+        userId, amount: refund, reason: "refund:video", refId: row.id, idem: `refund:video:${row.id}`,
       });
-      const { data: p2 } = await supabase.from("profiles").select("credits").eq("id", userId).maybeSingle();
-      if (p2) await supabase.from("profiles").update({ credits: p2.credits + refund }).eq("id", userId);
     }
     return { status: "failed" as const, url: null, error: errText };
   });

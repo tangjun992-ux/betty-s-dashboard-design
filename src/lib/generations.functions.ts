@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { consumeCredits } from "./credits.server";
 import { findImageModel, IMAGE_MODELS } from "./model-registry";
 
 const ImageInput = z.object({

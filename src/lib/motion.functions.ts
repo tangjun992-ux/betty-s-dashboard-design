@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { consumeCredits } from "./credits.server";
 
 const MotionInput = z.object({
   videoPath: z.string().min(1),
@@ -74,10 +75,9 @@ export const generateMotion = createServerFn({ method: "POST" })
       throw new Error("Motion provider did not return a request id");
     }
 
-    await supabase.from("credits_ledger").insert({
-      user_id: userId, delta: -cost, reason: "motion", ref_id: row.id,
+    await consumeCredits(supabase, {
+      userId, amount: cost, reason: "motion", refId: row.id, idem: `motion:${row.id}`,
     });
-    await supabase.from("profiles").update({ credits: prof.credits - cost }).eq("id", userId);
 
     await supabase.from("generations").update({
       status: "running",
