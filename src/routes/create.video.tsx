@@ -180,6 +180,7 @@ function VideoPage() {
     setPhase("queued"); startTimer();
     const safeRes: VideoResolution = resolution === "4K" ? "1080p" : resolution;
     const t = toast.loading(`Queued — ${model.label} ~1–2 min…`);
+    track("video_generate_submit", { model: model.id, aspect, duration, resolution: safeRes, cost: model.cost });
     try {
       const r = await submit({ data: {
         prompt: prompt.trim(), model: model.id, aspect, duration, resolution: safeRes,
@@ -193,6 +194,7 @@ function VideoPage() {
     } catch (err) {
       stopTimer();
       setPhase("failed"); setErrMsg(err instanceof Error ? err.message : "Submit failed");
+      track("video_generate_fail", { model: model.id, error: err instanceof Error ? err.message : String(err) });
       toast.error(err instanceof Error ? err.message : "Submit failed", { id: t });
     }
   }
