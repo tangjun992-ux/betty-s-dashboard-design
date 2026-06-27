@@ -7,9 +7,57 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronDown, ChevronRight, RefreshCw, ShieldCheck, ShieldAlert, Search } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ChevronDown, ChevronRight, RefreshCw, ShieldCheck, ShieldAlert, Search, Download } from "lucide-react";
 import { getWebhookDebug, simulateReplay, type WebhookEventRow } from "@/lib/admin-webhooks.functions";
 import { AppShell } from "@/components/AppShell";
+
+function csvCell(v: unknown): string {
+  if (v === null || v === undefined) return "";
+  const s = typeof v === "string" ? v : typeof v === "number" || typeof v === "boolean" ? String(v) : JSON.stringify(v);
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function buildCsv(events: WebhookEventRow[]): string {
+  const header = [
+    "event_id",
+    "event_type",
+    "processed_at",
+    "ledger_id",
+    "ledger_created_at",
+    "user_id",
+    "delta",
+    "reason",
+    "idempotency_key",
+  ];
+  const lines: string[] = [header.join(",")];
+  for (const ev of events) {
+    if (ev.ledger.length === 0) {
+      lines.push([ev.event_id, ev.type, ev.processed_at, "", "", "", "", "", ""].map(csvCell).join(","));
+    } else {
+      for (const l of ev.ledger) {
+        lines.push(
+          [ev.event_id, ev.type, ev.processed_at, l.id, l.created_at, l.user_id, l.delta, l.reason, l.idempotency_key]
+            .map(csvCell)
+            .join(","),
+        );
+      }
+    }
+  }
+  return lines.join("\n");
+}
+
+function downloadCsv(filename: string, csv: string) {
+  const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 export const Route = createFileRoute("/admin/webhooks")({
   component: WebhookDebugPage,
