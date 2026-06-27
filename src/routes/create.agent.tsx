@@ -23,6 +23,8 @@ export const Route = createFileRoute("/create/agent")({
 function AgentPage() {
   const [input, setInput] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [mode, setMode] = useState<AgentMode>("prompt");
+  const [model, setModel] = useState<AgentModel>("sonnet-4.6");
 
   return (
     <AppShell>
