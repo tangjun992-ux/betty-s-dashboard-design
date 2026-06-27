@@ -57,6 +57,8 @@ export const startUpscale = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     if (!data.assetPath.startsWith(`${userId}/`)) throw new Error("Invalid path");
 
+    await enforceRateLimit(supabase, userId, "upscale:submit", 12, 60);
+
     const cost = COST[data.kind];
     const { data: prof } = await supabase
       .from("profiles").select("credits").eq("id", userId).maybeSingle();
