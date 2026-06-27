@@ -40,11 +40,20 @@ const DEFAULT_MODEL = IMAGE_MODELS.find((m) => m.key === "gpt-image-2") ?? IMAGE
 function ImagePage() {
   const navigate = useNavigate();
   const { user, loading } = useSession();
-  const [prompt, setPrompt] = useState("");
-  const [model, setModel] = useState(DEFAULT_MODEL);
-  const [aspect, setAspect] = useState<Aspect>(model.aspects.includes("9:16") ? "9:16" : model.aspects[0]);
+  const search = Route.useSearch();
+  const initialModel = useMemo(() => {
+    const m = search.model ? IMAGE_MODELS.find((x) => x.key === search.model) : null;
+    return m ?? DEFAULT_MODEL;
+  }, []); // eslint-disable-line
+  const [prompt, setPrompt] = useState(search.prompt ?? "");
+  const [model, setModel] = useState(initialModel);
+  const [aspect, setAspect] = useState<Aspect>(
+    (search.aspect && initialModel.aspects.includes(search.aspect as Aspect))
+      ? (search.aspect as Aspect)
+      : initialModel.aspects.includes("9:16") ? "9:16" : initialModel.aspects[0],
+  );
   const [quality, setQuality] = useState<ImageQuality>(
-    model.qualities.includes("2K") ? "2K" : model.qualities[model.qualities.length - 1],
+    initialModel.qualities.includes("2K") ? "2K" : initialModel.qualities[initialModel.qualities.length - 1],
   );
   const [batch, setBatch] = useState(1);
   const [advanced, setAdvanced] = useState<AdvancedOptions>({
