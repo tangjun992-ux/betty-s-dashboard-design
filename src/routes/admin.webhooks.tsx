@@ -271,7 +271,7 @@ function EventRow({
             <Badge variant="outline" className="text-muted-foreground">no-op</Badge>
           )}
         </div>
-      </button>
+      </div>
 
       {open && (
         <div className="space-y-3 bg-muted/20 px-4 py-4 text-sm">
