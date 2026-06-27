@@ -230,12 +230,16 @@ function StatsRow({
 function EventRow({
   ev,
   open,
+  selected,
+  onSelect,
   onToggle,
   onReplay,
   replayPending,
 }: {
   ev: WebhookEventRow;
   open: boolean;
+  selected: boolean;
+  onSelect: (v: boolean) => void;
   onToggle: () => void;
   onReplay: (idempotencyKey: string) => void;
   replayPending: boolean;
@@ -244,12 +248,12 @@ function EventRow({
   const ts = new Date(ev.processed_at);
   return (
     <div className="border-b last:border-b-0">
-      <button
-        onClick={onToggle}
-        className="grid w-full grid-cols-12 items-center gap-2 px-4 py-3 text-left text-sm transition hover:bg-muted/40"
-      >
-        <div className="col-span-1">
-          {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+      <div className="grid w-full grid-cols-12 items-center gap-2 px-4 py-3 text-sm transition hover:bg-muted/40">
+        <div className="col-span-1 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+          <Checkbox checked={selected} onCheckedChange={(v) => onSelect(!!v)} aria-label="Select event" />
+          <button onClick={onToggle} aria-label="Toggle details" className="text-muted-foreground">
+            {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          </button>
         </div>
         <div className="col-span-5 truncate font-mono text-xs">{ev.event_id}</div>
         <div className="col-span-3">
