@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { consumeCredits } from "./credits.server";
+import { consumeCredits, refundCredits } from "./credits.server";
 import { findImageModel, IMAGE_MODELS } from "./model-registry";
 
 const ImageInput = z.object({
@@ -51,12 +51,6 @@ export const generateImage = createServerFn({ method: "POST" })
 
     const totalCost = model.cost * data.batch;
 
-    const { data: prof } = await supabase
-      .from("profiles").select("credits").eq("id", userId).maybeSingle();
-    if (!prof || prof.credits < totalCost) {
-      throw new Error(`Need ${totalCost} credits to run this model.`);
-    }
-
     const { data: row, error: insErr } = await supabase
       .from("generations")
       .insert({
@@ -69,6 +63,11 @@ export const generateImage = createServerFn({ method: "POST" })
       })
       .select("id").single();
     if (insErr || !row) throw new Error(insErr?.message ?? "Failed to start generation");
+
+    // Atomic reserve: consume up-front so concurrent jobs cannot race past balance.
+    await consumeCredits(supabase, {
+      userId, amount: totalCost, reason: `image:${model.key}`, refId: row.id, idem: `image:${row.id}`,
+    });
 
     try {
       let dataUrl: string | undefined;
@@ -151,15 +150,16 @@ export const generateImage = createServerFn({ method: "POST" })
         .update({ status: "succeeded", asset_url: assetUrl, thumb_url: assetUrl })
         .eq("id", row.id);
 
-      await consumeCredits(supabase, {
-        userId, amount: totalCost, reason: `image:${model.key}`, refId: row.id, idem: `image:${row.id}`,
-      });
-
       return { id: row.id, url: assetUrl };
     } catch (err) {
       const message = err instanceof Error ? err.message : "Generation failed";
       await supabase.from("generations")
         .update({ status: "failed", error: message }).eq("id", row.id);
+      // Refund the up-front reservation on failure (idempotent).
+      await refundCredits(supabase, {
+        userId, amount: totalCost, reason: `refund:image:${model.key}`,
+        refId: row.id, idem: `refund:image:${row.id}`,
+      });
       throw new Error(message);
     }
   });
