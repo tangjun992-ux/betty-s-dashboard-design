@@ -137,12 +137,14 @@ function VideoPage() {
         if (r.status === "succeeded" && r.url) {
           stopTimer();
           setResult(r.url); setProgress(100); setPhase("completed"); setJobId(null);
+          track("video_generate_success", { model: model.id, elapsed_ms: Date.now() - startedAtRef.current });
           toast.success("Video ready", { id: toastId });
           return;
         }
         if (r.status === "failed") {
           stopTimer();
           setPhase("failed"); setErrMsg(r.error || "Generation failed"); setJobId(null);
+          track("video_generate_fail", { model: model.id, error: r.error });
           toast.error(r.error || "Video generation failed", { id: toastId });
           return;
         }
