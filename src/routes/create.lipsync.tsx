@@ -6,6 +6,7 @@ import { Search, Sparkles, FolderOpen, Image as ImageIcon, Film, User2, Clock, U
 import { AppShell } from "@/components/AppShell";
 import { listMyGenerations } from "@/lib/generations.functions";
 import { useSession } from "@/lib/use-session";
+import { LipsyncStep2, type LipsyncSource } from "@/components/create/LipsyncStep2";
 import bannerInfluencers from "@/assets/banner-influencers.jpg";
 import bannerTutorial from "@/assets/banner-tutorial.jpg";
 import bannerEarn from "@/assets/banner-earn.jpg";
@@ -47,6 +48,7 @@ function LipsyncPage() {
   const [topic, setTopic] = useState<Topic>("All");
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
+  const [committed, setCommitted] = useState<LipsyncSource | null>(null);
 
   return (
     <AppShell>
@@ -54,7 +56,6 @@ function LipsyncPage() {
         <h1 className="text-center text-[28px] lg:text-[32px] font-semibold tracking-tight">Select your base asset</h1>
         <p className="text-center text-[14px] text-muted-foreground mt-2">The source image or video for your lipsync.</p>
 
-        {/* Popular / Your Media segmented */}
         <div className="flex justify-center mt-7">
           <div className="inline-flex p-1 rounded-full bg-surface/70 border border-border/60">
             <Seg active={tab === "popular"} onClick={() => { setTab("popular"); setCat("All"); }} icon={<Sparkles className="size-3.5" />}>Popular</Seg>
@@ -76,9 +77,16 @@ function LipsyncPage() {
             cat={cat} setCat={setCat}
             q={q} setQ={setQ}
             selected={selected} setSelected={setSelected}
+            onContinue={(src) => setCommitted(src)}
           />
         )}
       </div>
+
+      <LipsyncStep2
+        open={committed !== null}
+        onOpenChange={(v) => { if (!v) setCommitted(null); }}
+        video={committed}
+      />
     </AppShell>
   );
 }
@@ -167,11 +175,12 @@ function PopularPanel({
 }
 
 function YourMediaPanel({
-  cat, setCat, q, setQ, selected, setSelected,
+  cat, setCat, q, setQ, selected, setSelected, onContinue,
 }: {
   cat: Cat; setCat: (c: Cat) => void;
   q: string; setQ: (s: string) => void;
   selected: string | null; setSelected: (s: string | null) => void;
+  onContinue: (src: LipsyncSource) => void;
 }) {
   const { user, loading } = useSession();
   const fetcher = useServerFn(listMyGenerations);
@@ -300,20 +309,31 @@ function YourMediaPanel({
         )}
       </div>
 
-      {selected && items.some((i) => i.id === selected) && (
-        <div className="sticky bottom-6 mt-8 flex justify-center">
-          <div className="inline-flex items-center gap-3 rounded-full border border-border bg-background/85 backdrop-blur-xl px-3 py-2 shadow-[var(--shadow-glow)]">
-            <span className="text-[12.5px] text-muted-foreground pl-2">Base asset selected</span>
-            <button
-              onClick={() => alert("Continue with this asset — next step")}
-              className="inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-[image:var(--gradient-brand)] text-brand-foreground text-[13px] font-semibold"
-            >
-              {query.isFetching && <Loader2 className="size-3.5 animate-spin" />}
-              Continue
-            </button>
+      {selected && items.some((i) => i.id === selected) && (() => {
+        const sel = items.find((i) => i.id === selected)!;
+        const isVideo = sel.kind === "video";
+        const url = sel.asset_url ?? sel.thumb_url ?? "";
+        return (
+          <div className="sticky bottom-6 mt-8 flex justify-center">
+            <div className="inline-flex items-center gap-3 rounded-full border border-border bg-background/85 backdrop-blur-xl px-3 py-2 shadow-[var(--shadow-glow)]">
+              <span className="text-[12.5px] text-muted-foreground pl-2">
+                {isVideo ? "Base video selected" : "Pick a video — images aren't lipsync-able"}
+              </span>
+              <button
+                onClick={() => {
+                  if (!isVideo || !url) return;
+                  onContinue({ kind: "url", value: url, label: sel.prompt ?? "Your video" });
+                }}
+                disabled={!isVideo || !url}
+                className="inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-[image:var(--gradient-brand)] text-brand-foreground text-[13px] font-semibold disabled:opacity-50"
+              >
+                {query.isFetching && <Loader2 className="size-3.5 animate-spin" />}
+                Continue
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </>
   );
 }
