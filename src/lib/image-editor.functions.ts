@@ -61,6 +61,8 @@ export const runImageEdit = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     if (!data.imagePath.startsWith(`${userId}/`)) throw new Error("Invalid file path");
 
+    await enforceRateLimit(supabase, userId, "editor:submit", 20, 60);
+
     const cost = COST[data.action];
 
     const { data: signed } = await supabase.storage.from("generations")
