@@ -28,6 +28,7 @@ const toolsNav = [
   { to: "/create/audio", icon: AudioLines, label: "Audio" },
   { to: "/create/elements", icon: Boxes, label: "My Elements" },
   { to: "/create/upscale", icon: Maximize2, label: "Upscaler" },
+  { to: "/create/bg-remove", icon: Scissors, label: "BG Remover" },
 ] as const;
 
 
