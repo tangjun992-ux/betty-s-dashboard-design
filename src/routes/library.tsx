@@ -14,6 +14,9 @@ import {
   Heart,
   LayoutGrid,
   Rows3,
+  Search,
+  Upload as UploadIcon,
+  X,
 } from "lucide-react";
 import { listMyGenerations } from "@/lib/generations.functions";
 import { useSession } from "@/lib/use-session";
