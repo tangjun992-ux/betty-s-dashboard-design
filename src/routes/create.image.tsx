@@ -11,6 +11,7 @@ import { CreateHub, Composer } from "@/components/create/CreateHub";
 import { ImageModelPicker } from "@/components/create/ImageModelPicker";
 import { ImageResolutionPopover, ImageBatchPopover } from "@/components/create/ImageOptionPopovers";
 import { AspectPopover, MorePopover, type AdvancedOptions } from "@/components/create/VideoOptionPopovers";
+import { ElementPicker, ElementChips, injectElementToken, removeElementToken, type ElementRow } from "@/components/create/ElementPicker";
 import { generateImage } from "@/lib/generations.functions";
 import { IMAGE_MODELS, type Aspect, type ImageQuality, type ImageModel } from "@/lib/model-registry";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -45,6 +46,15 @@ function ImagePage() {
   });
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [elements, setElements] = useState<ElementRow[]>([]);
+  function toggleElement(el: ElementRow) {
+    setElements((prev) => {
+      const has = prev.some((p) => p.id === el.id);
+      if (has) { setPrompt((p) => removeElementToken(p, el.name)); return prev.filter((p) => p.id !== el.id); }
+      setPrompt((p) => injectElementToken(p, el.name));
+      return [...prev, el];
+    });
+  }
   type Phase = "idle" | "queued" | "running" | "finalizing" | "completed" | "failed" | "cancelled";
   const [phase, setPhase] = useState<Phase>("idle");
   const [progress, setProgress] = useState(0);
@@ -225,6 +235,7 @@ function ImagePage() {
                   <AspectPopover options={model.aspects} value={aspect} onChange={setAspect} />
                   <ImageResolutionPopover options={model.qualities} value={quality} onChange={setQuality} />
                   <ImageBatchPopover max={model.maxBatch} value={batch} onChange={setBatch} />
+                  <ElementPicker selected={elements} onToggle={toggleElement} />
                   <MorePopover value={advanced} onChange={setAdvanced} />
                   <div className="ml-auto flex items-center gap-1.5 text-foreground pr-1">
                     <Coins className="size-3.5 text-amber-400" />
