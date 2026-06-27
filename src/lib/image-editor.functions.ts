@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { consumeCredits, refundCredits } from "./credits.server";
+import { enforceRateLimit } from "./rate-limit.server";
 
 const REMOVE_BG_MODEL = "fal-ai/birefnet/v2";
 const UPSCALE_MODEL = "fal-ai/clarity-upscaler";
@@ -59,6 +60,8 @@ export const runImageEdit = createServerFn({ method: "POST" })
     if (!falKey) throw new Error("Image editor not configured (FAL_KEY missing)");
     const { supabase, userId } = context;
     if (!data.imagePath.startsWith(`${userId}/`)) throw new Error("Invalid file path");
+
+    await enforceRateLimit(supabase, userId, "editor:submit", 20, 60);
 
     const cost = COST[data.action];
 

@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { consumeCredits, refundCredits } from "./credits.server";
+import { enforceRateLimit } from "./rate-limit.server";
 
 const IMAGE_MODEL = "fal-ai/clarity-upscaler";
 const VIDEO_MODEL = "fal-ai/topaz/upscale/video";
@@ -55,6 +56,8 @@ export const startUpscale = createServerFn({ method: "POST" })
     if (!falKey) throw new Error("Upscaler not configured (FAL_KEY missing)");
     const { supabase, userId } = context;
     if (!data.assetPath.startsWith(`${userId}/`)) throw new Error("Invalid path");
+
+    await enforceRateLimit(supabase, userId, "upscale:submit", 12, 60);
 
     const cost = COST[data.kind];
     const { data: prof } = await supabase

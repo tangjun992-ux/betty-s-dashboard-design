@@ -344,6 +344,27 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limits: {
+        Row: {
+          bucket: string
+          count: number
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          bucket: string
+          count?: number
+          user_id: string
+          window_start: string
+        }
+        Update: {
+          bucket?: string
+          count?: number
+          user_id?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       session_messages: {
         Row: {
           content: string
@@ -519,6 +540,15 @@ export type Database = {
         Returns: boolean
       }
       monthly_grant_for_price: { Args: { _price_id: string }; Returns: number }
+      rate_limit_check: {
+        Args: {
+          _bucket: string
+          _max: number
+          _user_id: string
+          _window_seconds: number
+        }
+        Returns: boolean
+      }
       refund_credits: {
         Args: {
           _amount: number

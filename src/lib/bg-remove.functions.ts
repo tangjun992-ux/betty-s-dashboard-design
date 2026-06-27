@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { consumeCredits, refundCredits } from "./credits.server";
+import { enforceRateLimit } from "./rate-limit.server";
 
 const MODEL = "fal-ai/birefnet/v2";
 const COST = 6;
@@ -39,6 +40,8 @@ export const removeBackground = createServerFn({ method: "POST" })
     if (!falKey) throw new Error("Background remover not configured (FAL_KEY missing)");
     const { supabase, userId } = context;
     if (!data.assetPath.startsWith(`${userId}/`)) throw new Error("Invalid path");
+
+    await enforceRateLimit(supabase, userId, "bgr:submit", 20, 60);
 
     const { data: prof } = await supabase
       .from("profiles").select("credits").eq("id", userId).maybeSingle();

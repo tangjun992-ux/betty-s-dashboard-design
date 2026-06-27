@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { initAnalytics, identify, reset as resetAnalytics } from "../lib/analytics";
 
 function NotFoundComponent() {
   return (
@@ -137,10 +138,19 @@ function RootComponent() {
   const router = useRouter();
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+    initAnalytics();
+  }, []);
+
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       router.invalidate();
-      if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
+      if (event === "SIGNED_OUT") {
+        resetAnalytics();
+      } else {
+        queryClient.invalidateQueries();
+        if (session?.user) identify(session.user.id, { email: session.user.email });
+      }
     });
     return () => sub.subscription.unsubscribe();
   }, [router, queryClient]);

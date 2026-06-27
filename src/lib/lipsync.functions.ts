@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { consumeCredits, refundCredits } from "./credits.server";
+import { enforceRateLimit } from "./rate-limit.server";
 
 const LIPSYNC_MODEL = "fal-ai/sync-lipsync/v2";
 const COST_LIPSYNC = 60;
@@ -41,6 +42,8 @@ export const generateLipsync = createServerFn({ method: "POST" })
     const falKey = process.env.FAL_KEY;
     if (!falKey) throw new Error("Lipsync service not configured (FAL_KEY missing)");
     const { supabase, userId } = context;
+
+    await enforceRateLimit(supabase, userId, "lipsync:submit", 8, 60);
 
     const [videoUrl, audioUrl] = await Promise.all([
       resolveUrl(supabase, userId, data.videoSource),

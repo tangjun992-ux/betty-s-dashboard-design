@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { consumeCredits, refundCredits } from "./credits.server";
+import { enforceRateLimit } from "./rate-limit.server";
 import { findVideoModel, VIDEO_MODELS } from "./model-registry";
 
 const VideoInput = z.object({
@@ -54,6 +55,8 @@ export const generateVideo = createServerFn({ method: "POST" })
     const falKey = process.env.FAL_KEY;
     if (!falKey) throw new Error("Video service not configured (FAL_KEY missing)");
     const { supabase, userId } = context;
+
+    await enforceRateLimit(supabase, userId, "video:submit", 10, 60);
 
     const model = findVideoModel(data.model);
     if (!model) throw new Error(`Unsupported video model: ${data.model}`);

@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { consumeCredits, refundCredits } from "./credits.server";
+import { enforceRateLimit } from "./rate-limit.server";
 import { findImageModel, IMAGE_MODELS } from "./model-registry";
 
 const ImageInput = z.object({
@@ -48,6 +49,9 @@ export const generateImage = createServerFn({ method: "POST" })
     if (data.batch > model.maxBatch) {
       throw new Error(`${model.label} supports max ${model.maxBatch} per run`);
     }
+
+    // Rate limit: protects against runaway loops, bots, and credit-burn scripts.
+    await enforceRateLimit(supabase, userId, "image:submit", 20, 60);
 
     const totalCost = model.cost * data.batch;
 

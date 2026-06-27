@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { consumeCredits, refundCredits } from "./credits.server";
+import { enforceRateLimit } from "./rate-limit.server";
 
 const MotionInput = z.object({
   videoPath: z.string().min(1),
@@ -20,6 +21,8 @@ export const generateMotion = createServerFn({ method: "POST" })
     const falKey = process.env.FAL_KEY;
     if (!falKey) throw new Error("Motion service not configured (FAL_KEY missing)");
     const { supabase, userId } = context;
+
+    await enforceRateLimit(supabase, userId, "motion:submit", 8, 60);
 
     const cost = data.mode === "Pro" ? 120 : 80;
 
