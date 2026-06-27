@@ -60,6 +60,8 @@ function VideoPage() {
     // Server only supports 480p/720p/1080p — clamp 4K down
     const safeRes: VideoResolution[] = model.resolutions.filter((r) => r !== "4K");
     if (!safeRes.includes(resolution)) setResolution(safeRes.includes("720p") ? "720p" : safeRes[0] ?? "720p");
+    if (!model.supportsStartFrame) setStartFrameUrl(null);
+    if (!model.supportsEndFrame) setEndFrameUrl(null);
   }, [model]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const cost = useMemo(() => model.cost(duration, resolution) * batch, [model, duration, resolution, batch]);
