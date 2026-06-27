@@ -147,7 +147,7 @@ function AgentPage() {
                       ? "bg-foreground text-background rounded-tr-sm"
                       : "bg-surface text-foreground rounded-tl-sm"
                   }`}>
-                    {m.content}
+                    {renderAssistantContent(m.content)}
                   </div>
                   {m.role === "user" && (
                     <div className="size-8 rounded-full bg-surface grid place-items-center shrink-0">
