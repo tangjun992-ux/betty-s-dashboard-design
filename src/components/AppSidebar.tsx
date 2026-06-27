@@ -46,7 +46,7 @@ export function AppSidebar() {
         <div className={`flex items-center ${collapsed ? "justify-center" : "justify-between"} px-3 h-14`}>
           {!collapsed && (
             <Link to="/" className="flex items-center gap-1.5">
-              <div className="size-5 rounded-md bg-[image:var(--gradient-brand)] grid place-items-center text-[10px] font-bold text-brand-foreground">
+              <div className="size-5 rounded-md bg-surface-hover border border-border grid place-items-center text-[10px] font-bold text-foreground">
                 b
               </div>
               <span className="text-[15px] font-semibold tracking-tight lowercase">betty</span>
