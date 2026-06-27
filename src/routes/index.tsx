@@ -92,7 +92,12 @@ const creatorExamples = [
 function Dashboard() {
   return (
     <AppShell>
-      <DashboardMotion><div className="pt-6 pb-14 space-y-14">
+      <DashboardMotion><div className="pt-8 pb-14 space-y-14">
+
+        {/* Hero Prompt — one-shot composer */}
+        <HomeComposer />
+
+
 
 
         {/* Banner carousel — peeks next slide */}
