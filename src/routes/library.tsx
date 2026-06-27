@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import {
   FolderOpen,
@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { listMyGenerations } from "@/lib/generations.functions";
 import { useSession } from "@/lib/use-session";
+import { useUploader } from "@/lib/use-uploader";
+import { UploadButton, GlobalDropOverlay, UploadsPanel } from "@/components/library/UploadDropzone";
 
 export const Route = createFileRoute("/library")({
   head: () => ({
