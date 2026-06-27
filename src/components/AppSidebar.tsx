@@ -32,17 +32,18 @@ const toolsNav = [
 ] as const;
 
 
-export function AppSidebar() {
+export function AppSidebar({ forceShow = false }: { forceShow?: boolean } = {}) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { collapsed, toggle } = useSidebarState();
   const [toolsExpanded, setToolsExpanded] = useState(false);
 
-  const width = collapsed ? "w-[64px]" : "w-[220px]";
+  const width = forceShow ? "w-full" : (collapsed ? "w-[64px]" : "w-[220px]");
+  const visibility = forceShow ? "flex" : "hidden md:flex";
 
   return (
     <TooltipProvider delayDuration={200}>
       <aside
-        className={`hidden md:flex flex-col ${width} shrink-0 border-r border-border bg-background h-screen sticky top-0 transition-[width] duration-200 ease-out`}
+        className={`${visibility} flex-col ${width} shrink-0 border-r border-border bg-background h-screen sticky top-0 transition-[width] duration-200 ease-out`}
         data-collapsed={collapsed}
       >
         <div className={`flex items-center ${collapsed ? "justify-center" : "justify-between"} px-3 h-14`}>
