@@ -36,7 +36,7 @@ export const Route = createFileRoute("/library")({
   component: LibraryPage,
 });
 
-type Kind = "all" | "image" | "video" | "audio";
+type Kind = "all" | "image" | "video" | "audio" | "upload";
 type View = "grid" | "masonry";
 
 const TABS: { kind: Kind; icon: typeof ImageIcon; label: string }[] = [
@@ -44,6 +44,7 @@ const TABS: { kind: Kind; icon: typeof ImageIcon; label: string }[] = [
   { kind: "image", icon: ImageIcon, label: "Images" },
   { kind: "video", icon: Video, label: "Videos" },
   { kind: "audio", icon: Mic2, label: "Audio" },
+  { kind: "upload", icon: UploadIcon, label: "Uploads" },
 ];
 
 function LibraryPage() {
