@@ -45,7 +45,7 @@ function ImagePage() {
     const m = search.model ? IMAGE_MODELS.find((x) => x.key === search.model) : null;
     return m ?? DEFAULT_MODEL;
   }, []); // eslint-disable-line
-  const [prompt, setPrompt] = useState(search.prompt ?? "");
+  const [prompt, setPrompt] = useState<string>(search.prompt ?? "");
   const [model, setModel] = useState(initialModel);
   const [aspect, setAspect] = useState<Aspect>(
     (search.aspect && initialModel.aspects.includes(search.aspect as Aspect))
