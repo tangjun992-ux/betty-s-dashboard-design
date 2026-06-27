@@ -171,7 +171,7 @@ function VideoPage() {
                 <div className="flex gap-2">
                   <RefTile label="Elements" icon={Puzzle} />
                   {model.supportsStartFrame && (
-                    <FrameUploader label="Start frame" value={startFrameUrl} onChange={setStartFrameUrl} disabled={busy} />
+                    <FrameUploader label="Ref Images" value={startFrameUrl} onChange={setStartFrameUrl} disabled={busy} />
                   )}
                   {model.supportsEndFrame && (
                     <FrameUploader label="End frame" value={endFrameUrl} onChange={setEndFrameUrl} disabled={busy} />
