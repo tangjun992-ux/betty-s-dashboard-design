@@ -12,6 +12,7 @@ import {
   Film,
   Brush,
   Wand2,
+  Scissors,
 } from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
