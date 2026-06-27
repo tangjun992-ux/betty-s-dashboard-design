@@ -105,6 +105,7 @@ function LibraryPage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
+              <UploadButton onFiles={onFiles} />
               <Link
                 to="/create/image"
                 className="h-9 px-4 rounded-full bg-[image:var(--gradient-brand)] text-brand-foreground text-[13px] font-semibold inline-flex items-center shadow-[var(--shadow-glow)]"
