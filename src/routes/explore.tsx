@@ -728,11 +728,16 @@ function WaterfallFeed({ kind, sort, onOpen }: { kind: Kind | "all"; sort: strin
 /* ───────────────────────── Card ──────────────────────────────────────────── */
 
 function ExploreCard({ card, full = false, onOpen }: { card: Card; full?: boolean; onOpen?: (c: Card) => void }) {
+  const navigate = useNavigate();
   const [liked, setLiked] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
   const [imgKey, setImgKey] = useState(0);
   const imgRef = useRef<HTMLImageElement | null>(null);
+  const onRecreate = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate({ to: card.kind === "video" ? "/create/video" : "/create/image", search: remixSearch(card) });
+  };
 
   // Catch "complete-before-onload" cache hits.
   useEffect(() => {
