@@ -2,12 +2,13 @@ import { useMemo } from "react";
 import { Link } from "@tanstack/react-router";
 import { AlertTriangle, Coins, Clock } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
-import { useSession } from "@/lib/use-session";
+import { useSession, useProfile } from "@/lib/use-session";
 
 const LOW_CREDIT_THRESHOLD = 50;
 
 export function SubscriptionBanner() {
-  const { profile, user } = useSession();
+  const { user } = useSession();
+  const profile = useProfile(user?.id);
   const { subscription: sub } = useSubscription();
 
   const variant = useMemo(() => {
