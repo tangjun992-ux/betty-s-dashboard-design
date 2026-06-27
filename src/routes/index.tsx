@@ -62,19 +62,19 @@ const popularTools = [
 ];
 
 const videoTools = [
-  { image: toolSeedance, tag: "Video", title: "Seedance 2.0 Omni-Video", description: "Generate videos with multi-modal input, lip sync, and multi-shot narrative." },
-  { image: bannerTutorial, tag: "Video", title: "Studio Lip-Syncing", description: "Create satire clips, avatar videos, or a personal clone with our lip-syncing technology.", hasExamples: true },
-  { image: toolMotion, tag: "Video", title: "Motion Control", description: "Generate videos with precise motion guidance using reference videos and characters." },
-  { image: toolAvatar, tag: "Video", title: "Talking Avatar", description: "Image and audio to video creation. Turn any image into a talking avatar with lip-sync." },
-  { image: toolVideogen, tag: "Video", title: "Video Generation", description: "Create viral content, advertisements, and more with our AI-powered video generator.", hasExamples: true },
+  { image: toolSeedance, tag: "Video", title: "Seedance 2.0 Omni-Video", description: "Generate videos with multi-modal input, lip sync, and multi-shot narrative.", to: "/create/video" },
+  { image: bannerTutorial, tag: "Video", title: "Studio Lip-Syncing", description: "Create satire clips, avatar videos, or a personal clone with our lip-syncing technology.", hasExamples: true, to: "/create/lipsync", examplesTo: "/explore" },
+  { image: toolMotion, tag: "Video", title: "Motion Control", description: "Generate videos with precise motion guidance using reference videos and characters.", to: "/create/motion" },
+  { image: toolAvatar, tag: "Video", title: "Talking Avatar", description: "Image and audio to video creation. Turn any image into a talking avatar with lip-sync.", to: "/create/avatar" },
+  { image: toolVideogen, tag: "Video", title: "Video Generation", description: "Create viral content, advertisements, and more with our AI-powered video generator.", hasExamples: true, to: "/create/video", examplesTo: "/explore" },
 ];
 
 const imageTools = [
-  { image: toolImagegen, tag: "Image", title: "Pro Image Editor", description: "Advanced AI-powered image editing tools for professional results." },
-  { image: toolProduct, tag: "Image", title: "Stunning Product Shots", description: "Generate a batch of professional images of your product with AI in minutes." },
-  { image: toolHeadshot, tag: "Image", title: "Professional Headshots", description: "Generate polished, professional headshots perfect for LinkedIn and resumes." },
-  { image: toolAvatar, tag: "Image", title: "AI Photo Packs", description: "Choose from a variety of photo packs to generate a set of photos tailored to your needs." },
-  { image: toolImagegen, tag: "Image", title: "Pro Image Generation", description: "Create realistic UGC content and product visuals for your social media.", hasExamples: true },
+  { image: toolImagegen, tag: "Image", title: "Pro Image Editor", description: "Advanced AI-powered image editing tools for professional results.", to: "/create/image" },
+  { image: toolProduct, tag: "Image", title: "Stunning Product Shots", description: "Generate a batch of professional images of your product with AI in minutes.", to: "/create/image" },
+  { image: toolHeadshot, tag: "Image", title: "Professional Headshots", description: "Generate polished, professional headshots perfect for LinkedIn and resumes.", to: "/create/image" },
+  { image: toolAvatar, tag: "Image", title: "AI Photo Packs", description: "Choose from a variety of photo packs to generate a set of photos tailored to your needs.", to: "/create/image" },
+  { image: toolImagegen, tag: "Image", title: "Pro Image Generation", description: "Create realistic UGC content and product visuals for your social media.", hasExamples: true, to: "/create/image", examplesTo: "/explore" },
 ];
 
 const creatorExamples = [
