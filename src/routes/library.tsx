@@ -14,6 +14,9 @@ import {
   Heart,
   LayoutGrid,
   Rows3,
+  Search,
+  Upload as UploadIcon,
+  X,
 } from "lucide-react";
 import { listMyGenerations } from "@/lib/generations.functions";
 import { useSession } from "@/lib/use-session";
@@ -33,7 +36,7 @@ export const Route = createFileRoute("/library")({
   component: LibraryPage,
 });
 
-type Kind = "all" | "image" | "video" | "audio";
+type Kind = "all" | "image" | "video" | "audio" | "upload";
 type View = "grid" | "masonry";
 
 const TABS: { kind: Kind; icon: typeof ImageIcon; label: string }[] = [
@@ -41,14 +44,22 @@ const TABS: { kind: Kind; icon: typeof ImageIcon; label: string }[] = [
   { kind: "image", icon: ImageIcon, label: "Images" },
   { kind: "video", icon: Video, label: "Videos" },
   { kind: "audio", icon: Mic2, label: "Audio" },
+  { kind: "upload", icon: UploadIcon, label: "Uploads" },
 ];
 
 function LibraryPage() {
   const { user, loading } = useSession();
   const [tab, setTab] = useState<Kind>("all");
   const [view, setView] = useState<View>("grid");
+  const [query, setQuery] = useState("");
+  const [debounced, setDebounced] = useState("");
   const fetcher = useServerFn(listMyGenerations);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(query.trim().toLowerCase()), 180);
+    return () => clearTimeout(t);
+  }, [query]);
 
   const q = useQuery({
     queryKey: ["my-generations", user?.id],
@@ -67,17 +78,26 @@ function LibraryPage() {
 
   const all = q.data ?? [];
   const counts = useMemo(() => {
-    const c: Record<Kind, number> = { all: all.length, image: 0, video: 0, audio: 0 };
+    const c: Record<Kind, number> = { all: all.length, image: 0, video: 0, audio: 0, upload: 0 };
     for (const g of all) {
-      if (g.kind === "image" || g.kind === "video" || g.kind === "audio") c[g.kind]++;
+      if ((g as any).model === "upload") c.upload++;
+      if (g.kind === "image" || g.kind === "video" || g.kind === "audio") c[g.kind as Kind]++;
     }
     return c;
   }, [all]);
 
-  const items = useMemo(
-    () => (tab === "all" ? all : all.filter((g) => g.kind === tab)),
-    [all, tab],
-  );
+  const items = useMemo(() => {
+    let list = all;
+    if (tab === "upload") list = list.filter((g) => (g as any).model === "upload");
+    else if (tab !== "all") list = list.filter((g) => g.kind === tab);
+    if (debounced) {
+      list = list.filter((g) => {
+        const hay = `${g.prompt ?? ""} ${(g as any).model ?? ""} ${g.kind ?? ""}`.toLowerCase();
+        return hay.includes(debounced);
+      });
+    }
+    return list;
+  }, [all, tab, debounced]);
 
   return (
     <AppShell>
@@ -146,25 +166,46 @@ function LibraryPage() {
                 );
               })}
             </div>
-            <div className="ml-auto inline-flex rounded-full border border-border p-0.5 bg-surface">
-              <button
-                onClick={() => setView("grid")}
-                aria-pressed={view === "grid"}
-                className={`size-7 grid place-items-center rounded-full transition-colors ${
-                  view === "grid" ? "bg-background text-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <LayoutGrid className="size-3.5" />
-              </button>
-              <button
-                onClick={() => setView("masonry")}
-                aria-pressed={view === "masonry"}
-                className={`size-7 grid place-items-center rounded-full transition-colors ${
-                  view === "masonry" ? "bg-background text-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Rows3 className="size-3.5" />
-              </button>
+            <div className="ml-auto flex items-center gap-2">
+              <div className="relative hidden sm:block">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search prompts, models…"
+                  className="h-8 w-56 md:w-72 pl-8 pr-7 rounded-full bg-surface border border-border text-[12.5px] placeholder:text-muted-foreground/70 focus:outline-none focus:border-foreground/30 focus:bg-background transition-colors"
+                />
+                {query && (
+                  <button
+                    onClick={() => setQuery("")}
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 size-5 grid place-items-center rounded-full text-muted-foreground hover:text-foreground hover:bg-background"
+                    aria-label="Clear search"
+                  >
+                    <X className="size-3" />
+                  </button>
+                )}
+              </div>
+              <div className="inline-flex rounded-full border border-border p-0.5 bg-surface">
+                <button
+                  onClick={() => setView("grid")}
+                  aria-pressed={view === "grid"}
+                  className={`size-7 grid place-items-center rounded-full transition-colors ${
+                    view === "grid" ? "bg-background text-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <LayoutGrid className="size-3.5" />
+                </button>
+                <button
+                  onClick={() => setView("masonry")}
+                  aria-pressed={view === "masonry"}
+                  className={`size-7 grid place-items-center rounded-full transition-colors ${
+                    view === "masonry" ? "bg-background text-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Rows3 className="size-3.5" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
