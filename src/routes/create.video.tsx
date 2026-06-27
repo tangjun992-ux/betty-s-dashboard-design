@@ -137,7 +137,7 @@ function VideoPage() {
         if (r.status === "succeeded" && r.url) {
           stopTimer();
           setResult(r.url); setProgress(100); setPhase("completed"); setJobId(null);
-          track("video_generate_success", { model: model.id, elapsed_ms: Date.now() - startedAtRef.current });
+          track("video_generate_success", { model: model.id, elapsed_s: elapsed });
           toast.success("Video ready", { id: toastId });
           return;
         }
