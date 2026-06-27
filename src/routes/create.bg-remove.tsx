@@ -3,7 +3,7 @@ import { Scissors, Upload, X, Download, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { CreateLayout, FormField, PrimaryButton } from "@/components/dashboard/CreateLayout";
+import { CreateLayout, FormField, PrimaryButton, EmptyPreview } from "@/components/dashboard/CreateLayout";
 import { uploadBgrSource, removeBackground, BGR_COST } from "@/lib/bg-remove.functions";
 import { useSession } from "@/lib/use-session";
 
@@ -65,66 +65,71 @@ function BgRemovePage() {
       const r = await remove({ data: { assetPath: path } });
       setResultUrl(r.url); setPhase("succeeded");
       toast.success("Background removed");
-    } catch (e: any) {
-      const msg = e?.message ?? "Failed to remove background";
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Failed to remove background";
       setError(msg); setPhase("failed"); toast.error(msg);
     }
   }
+
+  const busy = phase === "uploading" || phase === "running";
+
+  const controls = (
+    <>
+      <FormField label="Source image" hint="PNG, JPG, WEBP — up to 20MB">
+        {!preview ? (
+          <label className="block rounded-xl border border-dashed border-border bg-background/40 hover:bg-background transition-colors cursor-pointer">
+            <input ref={inputRef} type="file" accept="image/*" hidden onChange={(e) => onPick(e.target.files?.[0] ?? null)} />
+            <div className="p-8 grid place-items-center text-center">
+              <div className="size-10 rounded-lg bg-background border border-border grid place-items-center mb-2">
+                <Upload className="size-4 text-muted-foreground" />
+              </div>
+              <div className="text-[13px] font-medium">Upload image</div>
+            </div>
+          </label>
+        ) : (
+          <div className="relative rounded-xl border border-border bg-background/40 p-2">
+            <button onClick={reset} className="absolute top-2 right-2 size-6 grid place-items-center rounded-full bg-black/55 text-white hover:bg-black/75 z-10" aria-label="Remove">
+              <X className="size-3" />
+            </button>
+            <img src={preview} alt="" className="max-h-[220px] w-auto mx-auto rounded-lg block" />
+          </div>
+        )}
+      </FormField>
+      <PrimaryButton onClick={onRun} disabled={!file || busy}>
+        {phase === "uploading" ? (<span className="inline-flex items-center gap-2 justify-center"><Loader2 className="size-4 animate-spin" /> Uploading…</span>)
+          : phase === "running" ? (<span className="inline-flex items-center gap-2 justify-center"><Loader2 className="size-4 animate-spin" /> Removing…</span>)
+          : `Remove background · ${BGR_COST} credits`}
+      </PrimaryButton>
+    </>
+  );
+
+  const previewPane = resultUrl ? (
+    <div className="space-y-3">
+      <div className="rounded-xl border border-border p-3" style={{ backgroundImage: "conic-gradient(#27272a 25%, #18181b 0 50%, #27272a 0 75%, #18181b 0)", backgroundSize: "18px 18px" }}>
+        <img src={resultUrl} alt="No background" className="max-h-[480px] w-auto mx-auto rounded-lg block" />
+      </div>
+      <div className="flex justify-end">
+        <a href={resultUrl} target="_blank" rel="noreferrer" download className="h-9 px-4 inline-flex items-center gap-1.5 rounded-md bg-foreground text-background text-[13px] font-medium">
+          <Download className="size-3.5" /> Download PNG
+        </a>
+      </div>
+    </div>
+  ) : phase === "failed" ? (
+    <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-[13px] text-destructive">{error ?? "Failed"}</div>
+  ) : busy ? (
+    <div className="h-full min-h-[460px] grid place-items-center text-muted-foreground text-sm">
+      <span className="inline-flex items-center gap-2"><Loader2 className="size-4 animate-spin" /> {phase === "uploading" ? "Uploading source…" : "Removing background…"}</span>
+    </div>
+  ) : (
+    <EmptyPreview icon={<Scissors className="size-6" />} message="Upload an image to remove its background with a clean alpha cutout." />
+  );
 
   return (
     <CreateLayout
       title="Background Remover"
       subtitle={`Cleanly cut out subjects — ${BGR_COST} credits per image.`}
-      icon={Scissors}
-      footer={
-        <div className="flex items-center justify-between">
-          <span className="text-[12px] text-muted-foreground">{BGR_COST} credits</span>
-          <PrimaryButton onClick={onRun} disabled={!file || phase === "uploading" || phase === "running"}>
-            {phase === "uploading" ? (<><Loader2 className="size-4 animate-spin" /> Uploading…</>)
-              : phase === "running" ? (<><Loader2 className="size-4 animate-spin" /> Removing…</>)
-              : "Remove background"}
-          </PrimaryButton>
-        </div>
-      }
-    >
-      <FormField label="Source image">
-        {!preview ? (
-          <label className="block rounded-2xl border border-dashed border-border bg-surface/40 hover:bg-surface transition-colors cursor-pointer">
-            <input ref={inputRef} type="file" accept="image/*" hidden onChange={(e) => onPick(e.target.files?.[0] ?? null)} />
-            <div className="p-12 grid place-items-center text-center">
-              <div className="size-12 rounded-xl bg-background border border-border grid place-items-center mb-3">
-                <Upload className="size-5 text-muted-foreground" />
-              </div>
-              <div className="text-[13.5px] font-medium">Upload image</div>
-              <div className="text-[12px] text-muted-foreground mt-1">PNG, JPG, WEBP — up to 20MB</div>
-            </div>
-          </label>
-        ) : (
-          <div className="relative rounded-2xl border border-border bg-surface/40 p-3">
-            <button onClick={reset} className="absolute top-3 right-3 size-7 grid place-items-center rounded-full bg-black/55 text-white hover:bg-black/75 z-10" aria-label="Remove">
-              <X className="size-3.5" />
-            </button>
-            <img src={preview} alt="" className="max-h-[420px] w-auto mx-auto rounded-xl block" />
-          </div>
-        )}
-      </FormField>
-
-      {(phase === "succeeded" || phase === "failed") && (
-        <FormField label="Result">
-          {resultUrl ? (
-            <div className="rounded-2xl border border-border bg-[repeating-conic-gradient(theme(colors.zinc.800)_0%_25%,theme(colors.zinc.900)_0%_50%)_50%_/_18px_18px] p-3">
-              <img src={resultUrl} alt="No background" className="max-h-[420px] w-auto mx-auto rounded-xl block" />
-              <div className="mt-3 flex justify-end">
-                <a href={resultUrl} target="_blank" rel="noreferrer" download className="h-9 px-4 inline-flex items-center gap-1.5 rounded-full bg-foreground text-background text-[13px] font-medium">
-                  <Download className="size-3.5" /> Download PNG
-                </a>
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-4 text-[13px] text-destructive">{error ?? "Failed"}</div>
-          )}
-        </FormField>
-      )}
-    </CreateLayout>
+      controls={controls}
+      preview={previewPane}
+    />
   );
 }
