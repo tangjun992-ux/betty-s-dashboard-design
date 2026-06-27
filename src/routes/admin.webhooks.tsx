@@ -7,9 +7,57 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronDown, ChevronRight, RefreshCw, ShieldCheck, ShieldAlert, Search } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ChevronDown, ChevronRight, RefreshCw, ShieldCheck, ShieldAlert, Search, Download } from "lucide-react";
 import { getWebhookDebug, simulateReplay, type WebhookEventRow } from "@/lib/admin-webhooks.functions";
 import { AppShell } from "@/components/AppShell";
+
+function csvCell(v: unknown): string {
+  if (v === null || v === undefined) return "";
+  const s = typeof v === "string" ? v : typeof v === "number" || typeof v === "boolean" ? String(v) : JSON.stringify(v);
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function buildCsv(events: WebhookEventRow[]): string {
+  const header = [
+    "event_id",
+    "event_type",
+    "processed_at",
+    "ledger_id",
+    "ledger_created_at",
+    "user_id",
+    "delta",
+    "reason",
+    "idempotency_key",
+  ];
+  const lines: string[] = [header.join(",")];
+  for (const ev of events) {
+    if (ev.ledger.length === 0) {
+      lines.push([ev.event_id, ev.type, ev.processed_at, "", "", "", "", "", ""].map(csvCell).join(","));
+    } else {
+      for (const l of ev.ledger) {
+        lines.push(
+          [ev.event_id, ev.type, ev.processed_at, l.id, l.created_at, l.user_id, l.delta, l.reason, l.idempotency_key]
+            .map(csvCell)
+            .join(","),
+        );
+      }
+    }
+  }
+  return lines.join("\n");
+}
+
+function downloadCsv(filename: string, csv: string) {
+  const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 export const Route = createFileRoute("/admin/webhooks")({
   component: WebhookDebugPage,
@@ -20,6 +68,7 @@ function WebhookDebugPage() {
   const runReplay = useServerFn(simulateReplay);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState<Record<string, boolean>>({});
+  const [selected, setSelected] = useState<Record<string, boolean>>({});
 
   const q = useQuery({
     queryKey: ["admin-webhook-debug", search],
@@ -64,43 +113,87 @@ function WebhookDebugPage() {
           <>
             <StatsRow stats={q.data?.stats} loading={q.isLoading} />
 
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Filter by event_id or type (e.g. invoice.paid)"
-                className="pl-9"
-              />
-            </div>
+            {(() => {
+              const events = q.data?.events ?? [];
+              const selectedEvents = events.filter((e) => selected[e.event_id]);
+              const allSelected = events.length > 0 && selectedEvents.length === events.length;
+              const someSelected = selectedEvents.length > 0 && !allSelected;
+              const toggleAll = () => {
+                if (allSelected) setSelected({});
+                else setSelected(Object.fromEntries(events.map((e) => [e.event_id, true])));
+              };
+              const exportCsv = () => {
+                const rows = selectedEvents.length > 0 ? selectedEvents : events;
+                if (rows.length === 0) {
+                  toast.error("Nothing to export");
+                  return;
+                }
+                const csv = buildCsv(rows);
+                const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+                downloadCsv(`webhook-events-${ts}.csv`, csv);
+                const ledgerRows = rows.reduce((s, r) => s + r.ledger.length, 0);
+                toast.success(`Exported ${rows.length} event(s) · ${ledgerRows} ledger row(s)`);
+              };
 
-            <Card className="overflow-hidden">
-              <div className="grid grid-cols-12 border-b px-4 py-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                <div className="col-span-1"></div>
-                <div className="col-span-5">event_id</div>
-                <div className="col-span-3">type</div>
-                <div className="col-span-2">processed_at</div>
-                <div className="col-span-1 text-right">ledger</div>
-              </div>
-              {q.isLoading ? (
-                <div className="p-6 text-sm text-muted-foreground">Loading…</div>
-              ) : (q.data?.events ?? []).length === 0 ? (
-                <div className="p-6 text-sm text-muted-foreground">No events yet.</div>
-              ) : (
-                (q.data?.events ?? []).map((ev) => (
-                  <EventRow
-                    key={ev.event_id}
-                    ev={ev}
-                    open={!!open[ev.event_id]}
-                    onToggle={() => setOpen((s) => ({ ...s, [ev.event_id]: !s[ev.event_id] }))}
-                    onReplay={(idem) =>
-                      replay.mutate({ eventId: ev.event_id, idempotencyKey: idem })
-                    }
-                    replayPending={replay.isPending}
-                  />
-                ))
-              )}
-            </Card>
+              return (
+                <>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="relative flex-1 min-w-[240px]">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Filter by event_id or type (e.g. invoice.paid)"
+                        className="pl-9"
+                      />
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {selectedEvents.length > 0 ? `${selectedEvents.length} selected` : `${events.length} total`}
+                    </div>
+                    <Button size="sm" onClick={exportCsv} disabled={events.length === 0}>
+                      <Download className="mr-2 h-4 w-4" />
+                      Export CSV {selectedEvents.length > 0 ? `(${selectedEvents.length})` : "(all)"}
+                    </Button>
+                  </div>
+
+                  <Card className="overflow-hidden">
+                    <div className="grid grid-cols-12 items-center gap-2 border-b px-4 py-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      <div className="col-span-1 flex items-center gap-2">
+                        <Checkbox
+                          checked={allSelected ? true : someSelected ? "indeterminate" : false}
+                          onCheckedChange={toggleAll}
+                          aria-label="Select all events"
+                        />
+                      </div>
+                      <div className="col-span-5">event_id</div>
+                      <div className="col-span-3">type</div>
+                      <div className="col-span-2">processed_at</div>
+                      <div className="col-span-1 text-right">ledger</div>
+                    </div>
+                    {q.isLoading ? (
+                      <div className="p-6 text-sm text-muted-foreground">Loading…</div>
+                    ) : events.length === 0 ? (
+                      <div className="p-6 text-sm text-muted-foreground">No events yet.</div>
+                    ) : (
+                      events.map((ev) => (
+                        <EventRow
+                          key={ev.event_id}
+                          ev={ev}
+                          open={!!open[ev.event_id]}
+                          selected={!!selected[ev.event_id]}
+                          onSelect={(v) => setSelected((s) => ({ ...s, [ev.event_id]: v }))}
+                          onToggle={() => setOpen((s) => ({ ...s, [ev.event_id]: !s[ev.event_id] }))}
+                          onReplay={(idem) =>
+                            replay.mutate({ eventId: ev.event_id, idempotencyKey: idem })
+                          }
+                          replayPending={replay.isPending}
+                        />
+                      ))
+                    )}
+                  </Card>
+                </>
+              );
+            })()}
           </>
         )}
       </div>
@@ -137,12 +230,16 @@ function StatsRow({
 function EventRow({
   ev,
   open,
+  selected,
+  onSelect,
   onToggle,
   onReplay,
   replayPending,
 }: {
   ev: WebhookEventRow;
   open: boolean;
+  selected: boolean;
+  onSelect: (v: boolean) => void;
   onToggle: () => void;
   onReplay: (idempotencyKey: string) => void;
   replayPending: boolean;
@@ -151,12 +248,12 @@ function EventRow({
   const ts = new Date(ev.processed_at);
   return (
     <div className="border-b last:border-b-0">
-      <button
-        onClick={onToggle}
-        className="grid w-full grid-cols-12 items-center gap-2 px-4 py-3 text-left text-sm transition hover:bg-muted/40"
-      >
-        <div className="col-span-1">
-          {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+      <div className="grid w-full grid-cols-12 items-center gap-2 px-4 py-3 text-sm transition hover:bg-muted/40">
+        <div className="col-span-1 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+          <Checkbox checked={selected} onCheckedChange={(v) => onSelect(!!v)} aria-label="Select event" />
+          <button onClick={onToggle} aria-label="Toggle details" className="text-muted-foreground">
+            {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          </button>
         </div>
         <div className="col-span-5 truncate font-mono text-xs">{ev.event_id}</div>
         <div className="col-span-3">
@@ -174,7 +271,7 @@ function EventRow({
             <Badge variant="outline" className="text-muted-foreground">no-op</Badge>
           )}
         </div>
-      </button>
+      </div>
 
       {open && (
         <div className="space-y-3 bg-muted/20 px-4 py-4 text-sm">
