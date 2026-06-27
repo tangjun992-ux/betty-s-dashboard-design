@@ -23,10 +23,13 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as UHandleRouteImport } from './routes/u.$handle'
 import { Route as CreateVideoRouteImport } from './routes/create.video'
 import { Route as CreateUpscaleRouteImport } from './routes/create.upscale'
+import { Route as CreateTimelineRouteImport } from './routes/create.timeline'
 import { Route as CreateMotionRouteImport } from './routes/create.motion'
 import { Route as CreateLipsyncRouteImport } from './routes/create.lipsync'
+import { Route as CreateImageEditorRouteImport } from './routes/create.image-editor'
 import { Route as CreateImageRouteImport } from './routes/create.image'
 import { Route as CreateExtractRouteImport } from './routes/create.extract'
+import { Route as CreateElementsRouteImport } from './routes/create.elements'
 import { Route as CreateAvatarRouteImport } from './routes/create.avatar'
 import { Route as CreateAudioRouteImport } from './routes/create.audio'
 import { Route as CreateAgentRouteImport } from './routes/create.agent'
@@ -101,6 +104,11 @@ const CreateUpscaleRoute = CreateUpscaleRouteImport.update({
   path: '/upscale',
   getParentRoute: () => CreateRoute,
 } as any)
+const CreateTimelineRoute = CreateTimelineRouteImport.update({
+  id: '/timeline',
+  path: '/timeline',
+  getParentRoute: () => CreateRoute,
+} as any)
 const CreateMotionRoute = CreateMotionRouteImport.update({
   id: '/motion',
   path: '/motion',
@@ -111,6 +119,11 @@ const CreateLipsyncRoute = CreateLipsyncRouteImport.update({
   path: '/lipsync',
   getParentRoute: () => CreateRoute,
 } as any)
+const CreateImageEditorRoute = CreateImageEditorRouteImport.update({
+  id: '/image-editor',
+  path: '/image-editor',
+  getParentRoute: () => CreateRoute,
+} as any)
 const CreateImageRoute = CreateImageRouteImport.update({
   id: '/image',
   path: '/image',
@@ -119,6 +132,11 @@ const CreateImageRoute = CreateImageRouteImport.update({
 const CreateExtractRoute = CreateExtractRouteImport.update({
   id: '/extract',
   path: '/extract',
+  getParentRoute: () => CreateRoute,
+} as any)
+const CreateElementsRoute = CreateElementsRouteImport.update({
+  id: '/elements',
+  path: '/elements',
   getParentRoute: () => CreateRoute,
 } as any)
 const CreateAvatarRoute = CreateAvatarRouteImport.update({
@@ -152,10 +170,13 @@ export interface FileRoutesByFullPath {
   '/create/agent': typeof CreateAgentRoute
   '/create/audio': typeof CreateAudioRoute
   '/create/avatar': typeof CreateAvatarRoute
+  '/create/elements': typeof CreateElementsRoute
   '/create/extract': typeof CreateExtractRoute
   '/create/image': typeof CreateImageRoute
+  '/create/image-editor': typeof CreateImageEditorRoute
   '/create/lipsync': typeof CreateLipsyncRoute
   '/create/motion': typeof CreateMotionRoute
+  '/create/timeline': typeof CreateTimelineRoute
   '/create/upscale': typeof CreateUpscaleRoute
   '/create/video': typeof CreateVideoRoute
   '/u/$handle': typeof UHandleRoute
@@ -175,10 +196,13 @@ export interface FileRoutesByTo {
   '/create/agent': typeof CreateAgentRoute
   '/create/audio': typeof CreateAudioRoute
   '/create/avatar': typeof CreateAvatarRoute
+  '/create/elements': typeof CreateElementsRoute
   '/create/extract': typeof CreateExtractRoute
   '/create/image': typeof CreateImageRoute
+  '/create/image-editor': typeof CreateImageEditorRoute
   '/create/lipsync': typeof CreateLipsyncRoute
   '/create/motion': typeof CreateMotionRoute
+  '/create/timeline': typeof CreateTimelineRoute
   '/create/upscale': typeof CreateUpscaleRoute
   '/create/video': typeof CreateVideoRoute
   '/u/$handle': typeof UHandleRoute
@@ -199,10 +223,13 @@ export interface FileRoutesById {
   '/create/agent': typeof CreateAgentRoute
   '/create/audio': typeof CreateAudioRoute
   '/create/avatar': typeof CreateAvatarRoute
+  '/create/elements': typeof CreateElementsRoute
   '/create/extract': typeof CreateExtractRoute
   '/create/image': typeof CreateImageRoute
+  '/create/image-editor': typeof CreateImageEditorRoute
   '/create/lipsync': typeof CreateLipsyncRoute
   '/create/motion': typeof CreateMotionRoute
+  '/create/timeline': typeof CreateTimelineRoute
   '/create/upscale': typeof CreateUpscaleRoute
   '/create/video': typeof CreateVideoRoute
   '/u/$handle': typeof UHandleRoute
@@ -224,10 +251,13 @@ export interface FileRouteTypes {
     | '/create/agent'
     | '/create/audio'
     | '/create/avatar'
+    | '/create/elements'
     | '/create/extract'
     | '/create/image'
+    | '/create/image-editor'
     | '/create/lipsync'
     | '/create/motion'
+    | '/create/timeline'
     | '/create/upscale'
     | '/create/video'
     | '/u/$handle'
@@ -247,10 +277,13 @@ export interface FileRouteTypes {
     | '/create/agent'
     | '/create/audio'
     | '/create/avatar'
+    | '/create/elements'
     | '/create/extract'
     | '/create/image'
+    | '/create/image-editor'
     | '/create/lipsync'
     | '/create/motion'
+    | '/create/timeline'
     | '/create/upscale'
     | '/create/video'
     | '/u/$handle'
@@ -270,10 +303,13 @@ export interface FileRouteTypes {
     | '/create/agent'
     | '/create/audio'
     | '/create/avatar'
+    | '/create/elements'
     | '/create/extract'
     | '/create/image'
+    | '/create/image-editor'
     | '/create/lipsync'
     | '/create/motion'
+    | '/create/timeline'
     | '/create/upscale'
     | '/create/video'
     | '/u/$handle'
@@ -394,6 +430,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreateUpscaleRouteImport
       parentRoute: typeof CreateRoute
     }
+    '/create/timeline': {
+      id: '/create/timeline'
+      path: '/timeline'
+      fullPath: '/create/timeline'
+      preLoaderRoute: typeof CreateTimelineRouteImport
+      parentRoute: typeof CreateRoute
+    }
     '/create/motion': {
       id: '/create/motion'
       path: '/motion'
@@ -408,6 +451,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreateLipsyncRouteImport
       parentRoute: typeof CreateRoute
     }
+    '/create/image-editor': {
+      id: '/create/image-editor'
+      path: '/image-editor'
+      fullPath: '/create/image-editor'
+      preLoaderRoute: typeof CreateImageEditorRouteImport
+      parentRoute: typeof CreateRoute
+    }
     '/create/image': {
       id: '/create/image'
       path: '/image'
@@ -420,6 +470,13 @@ declare module '@tanstack/react-router' {
       path: '/extract'
       fullPath: '/create/extract'
       preLoaderRoute: typeof CreateExtractRouteImport
+      parentRoute: typeof CreateRoute
+    }
+    '/create/elements': {
+      id: '/create/elements'
+      path: '/elements'
+      fullPath: '/create/elements'
+      preLoaderRoute: typeof CreateElementsRouteImport
       parentRoute: typeof CreateRoute
     }
     '/create/avatar': {
@@ -450,10 +507,13 @@ interface CreateRouteChildren {
   CreateAgentRoute: typeof CreateAgentRoute
   CreateAudioRoute: typeof CreateAudioRoute
   CreateAvatarRoute: typeof CreateAvatarRoute
+  CreateElementsRoute: typeof CreateElementsRoute
   CreateExtractRoute: typeof CreateExtractRoute
   CreateImageRoute: typeof CreateImageRoute
+  CreateImageEditorRoute: typeof CreateImageEditorRoute
   CreateLipsyncRoute: typeof CreateLipsyncRoute
   CreateMotionRoute: typeof CreateMotionRoute
+  CreateTimelineRoute: typeof CreateTimelineRoute
   CreateUpscaleRoute: typeof CreateUpscaleRoute
   CreateVideoRoute: typeof CreateVideoRoute
 }
@@ -462,10 +522,13 @@ const CreateRouteChildren: CreateRouteChildren = {
   CreateAgentRoute: CreateAgentRoute,
   CreateAudioRoute: CreateAudioRoute,
   CreateAvatarRoute: CreateAvatarRoute,
+  CreateElementsRoute: CreateElementsRoute,
   CreateExtractRoute: CreateExtractRoute,
   CreateImageRoute: CreateImageRoute,
+  CreateImageEditorRoute: CreateImageEditorRoute,
   CreateLipsyncRoute: CreateLipsyncRoute,
   CreateMotionRoute: CreateMotionRoute,
+  CreateTimelineRoute: CreateTimelineRoute,
   CreateUpscaleRoute: CreateUpscaleRoute,
   CreateVideoRoute: CreateVideoRoute,
 }
