@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { consumeCredits, refundCredits } from "./credits.server";
 
 const IMAGE_MODEL = "fal-ai/clarity-upscaler";
 const VIDEO_MODEL = "fal-ai/topaz/upscale/video";
@@ -80,11 +81,10 @@ export const startUpscale = createServerFn({ method: "POST" })
     }).select("id").single();
     if (insErr || !row) throw new Error(insErr?.message ?? "Failed to start job");
 
-    // Reserve credits up-front
-    await supabase.from("credits_ledger").insert({
-      user_id: userId, delta: -cost, reason: `upscale:${data.kind}`, ref_id: row.id,
+    // Reserve credits up-front (atomic, idempotent)
+    await consumeCredits(supabase, {
+      userId, amount: cost, reason: `upscale:${data.kind}`, refId: row.id, idem: `upscale:${row.id}`,
     });
-    await supabase.from("profiles").update({ credits: prof.credits - cost }).eq("id", userId);
 
     if (data.kind === "image") {
       // sync
@@ -96,9 +96,7 @@ export const startUpscale = createServerFn({ method: "POST" })
       if (!r.ok) {
         const t = await r.text();
         await supabase.from("generations").update({ status: "failed", error: t.slice(0, 300) }).eq("id", row.id);
-        // refund
-        await supabase.from("credits_ledger").insert({ user_id: userId, delta: cost, reason: `refund:upscale`, ref_id: row.id });
-        await supabase.from("profiles").update({ credits: prof.credits }).eq("id", userId);
+        await refundCredits(supabase, { userId, amount: cost, reason: "refund:upscale", refId: row.id, idem: `refund:upscale:${row.id}` });
         throw new Error(`Upscaler error (${r.status})`);
       }
       const json = await r.json() as { image?: { url: string }; images?: { url: string }[] };
@@ -128,8 +126,7 @@ export const startUpscale = createServerFn({ method: "POST" })
     if (!q.ok) {
       const t = await q.text();
       await supabase.from("generations").update({ status: "failed", error: t.slice(0, 300) }).eq("id", row.id);
-      await supabase.from("credits_ledger").insert({ user_id: userId, delta: cost, reason: `refund:upscale`, ref_id: row.id });
-      await supabase.from("profiles").update({ credits: prof.credits }).eq("id", userId);
+      await refundCredits(supabase, { userId, amount: cost, reason: "refund:upscale", refId: row.id, idem: `refund:upscale:${row.id}` });
       throw new Error(`Upscaler queue error (${q.status})`);
     }
     const queued = await q.json() as { request_id: string };
@@ -170,9 +167,7 @@ export const pollUpscale = createServerFn({ method: "POST" })
       if (sj.status === "FAILED") {
         await supabase.from("generations").update({ status: "failed", error: "provider failed" }).eq("id", row.id);
         if (p?.cost) {
-          await supabase.from("credits_ledger").insert({ user_id: userId, delta: p.cost, reason: "refund:upscale", ref_id: row.id });
-          const { data: pr } = await supabase.from("profiles").select("credits").eq("id", userId).maybeSingle();
-          if (pr) await supabase.from("profiles").update({ credits: pr.credits + p.cost }).eq("id", userId);
+          await refundCredits(supabase, { userId, amount: p.cost, reason: "refund:upscale", refId: row.id, idem: `refund:upscale:${row.id}` });
         }
         return { status: "failed" as const, url: null };
       }

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { consumeCredits } from "./credits.server";
 
 const LIPSYNC_MODEL = "fal-ai/sync-lipsync/v2";
 const COST_LIPSYNC = 60;
@@ -86,10 +87,9 @@ export const generateLipsync = createServerFn({ method: "POST" })
       throw new Error("Lipsync provider did not return a request id");
     }
 
-    await supabase.from("credits_ledger").insert({
-      user_id: userId, delta: -COST_LIPSYNC, reason: "lipsync", ref_id: row.id,
+    await consumeCredits(supabase, {
+      userId, amount: COST_LIPSYNC, reason: "lipsync", refId: row.id, idem: `lipsync:${row.id}`,
     });
-    await supabase.from("profiles").update({ credits: prof.credits - COST_LIPSYNC }).eq("id", userId);
 
     await supabase.from("generations").update({
       status: "running",

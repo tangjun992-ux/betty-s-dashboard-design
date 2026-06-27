@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { consumeCredits } from "./credits.server";
 import { findImageModel, IMAGE_MODELS } from "./model-registry";
 
 const ImageInput = z.object({
@@ -150,12 +151,9 @@ export const generateImage = createServerFn({ method: "POST" })
         .update({ status: "succeeded", asset_url: assetUrl, thumb_url: assetUrl })
         .eq("id", row.id);
 
-      await supabase.from("credits_ledger").insert({
-        user_id: userId, delta: -totalCost,
-        reason: `image:${model.key}`, ref_id: row.id,
+      await consumeCredits(supabase, {
+        userId, amount: totalCost, reason: `image:${model.key}`, refId: row.id, idem: `image:${row.id}`,
       });
-      await supabase.from("profiles")
-        .update({ credits: prof.credits - totalCost }).eq("id", userId);
 
       return { id: row.id, url: assetUrl };
     } catch (err) {

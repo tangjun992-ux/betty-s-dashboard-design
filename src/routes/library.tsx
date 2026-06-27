@@ -19,6 +19,7 @@ import {
   X,
 } from "lucide-react";
 import { listMyGenerations } from "@/lib/generations.functions";
+import { listMyAssets } from "@/lib/assets.functions";
 import { useSession } from "@/lib/use-session";
 import { useUploader } from "@/lib/use-uploader";
 import { UploadButton, GlobalDropOverlay, UploadsPanel } from "@/components/library/UploadDropzone";
@@ -54,6 +55,7 @@ function LibraryPage() {
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
   const fetcher = useServerFn(listMyGenerations);
+  const assetsFetcher = useServerFn(listMyAssets);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -66,21 +68,46 @@ function LibraryPage() {
     queryFn: () => fetcher(),
     enabled: !!user,
   });
+  const qa = useQuery({
+    queryKey: ["my-assets", user?.id],
+    queryFn: () => assetsFetcher(),
+    enabled: !!user,
+  });
 
   const uploader = useUploader();
   const onFiles = useCallback((files: File[]) => uploader.start(files), [uploader]);
 
-  // Refresh grid when an upload completes
+  // Refresh both grids when an upload completes
   const doneIds = uploader.items.filter((i) => i.status === "done").map((i) => i.generationId ?? i.id).join(",");
   useEffect(() => {
-    if (doneIds) queryClient.invalidateQueries({ queryKey: ["my-generations", user?.id] });
+    if (doneIds) {
+      queryClient.invalidateQueries({ queryKey: ["my-generations", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["my-assets", user?.id] });
+    }
   }, [doneIds, queryClient, user?.id]);
 
-  const all = q.data ?? [];
+  // Merge generations + uploaded assets into a single feed.
+  const all = useMemo(() => {
+    const gens = (q.data ?? []).map((g) => ({
+      id: g.id, kind: g.kind, prompt: g.prompt, status: g.status,
+      thumb_url: g.thumb_url, asset_url: g.asset_url,
+      like_count: g.like_count, source: "generation" as const,
+      created_at: (g as any).created_at,
+    }));
+    const ups = (qa.data ?? []).map((a) => ({
+      id: a.id, kind: a.kind === "other" ? "image" : a.kind, prompt: (a.metadata as any)?.original_name ?? null,
+      status: "succeeded", thumb_url: a.thumb_url, asset_url: a.url,
+      like_count: 0, source: "upload" as const, created_at: a.created_at,
+    }));
+    return [...gens, ...ups].sort((a, b) =>
+      (b.created_at ?? "").localeCompare(a.created_at ?? ""),
+    );
+  }, [q.data, qa.data]);
+
   const counts = useMemo(() => {
     const c: Record<Kind, number> = { all: all.length, image: 0, video: 0, audio: 0, upload: 0 };
     for (const g of all) {
-      if ((g as any).model === "upload") c.upload++;
+      if (g.source === "upload") c.upload++;
       if (g.kind === "image" || g.kind === "video" || g.kind === "audio") c[g.kind as Kind]++;
     }
     return c;
@@ -88,11 +115,11 @@ function LibraryPage() {
 
   const items = useMemo(() => {
     let list = all;
-    if (tab === "upload") list = list.filter((g) => (g as any).model === "upload");
+    if (tab === "upload") list = list.filter((g) => g.source === "upload");
     else if (tab !== "all") list = list.filter((g) => g.kind === tab);
     if (debounced) {
       list = list.filter((g) => {
-        const hay = `${g.prompt ?? ""} ${(g as any).model ?? ""} ${g.kind ?? ""}`.toLowerCase();
+        const hay = `${g.prompt ?? ""} ${g.kind ?? ""}`.toLowerCase();
         return hay.includes(debounced);
       });
     }

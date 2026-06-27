@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { consumeCredits } from "./credits.server";
 
 const REMOVE_BG_MODEL = "fal-ai/birefnet/v2";
 const UPSCALE_MODEL = "fal-ai/clarity-upscaler";
@@ -128,10 +129,9 @@ export const runImageEdit = createServerFn({ method: "POST" })
       if (pub?.signedUrl) finalUrl = pub.signedUrl;
     }
 
-    await supabase.from("credits_ledger").insert({
-      user_id: userId, delta: -cost, reason: `editor:${data.action}`, ref_id: row.id,
+    await consumeCredits(supabase, {
+      userId, amount: cost, reason: `editor:${data.action}`, refId: row.id, idem: `editor:${row.id}`,
     });
-    await supabase.from("profiles").update({ credits: prof.credits - cost }).eq("id", userId);
 
     await supabase.from("generations").update({
       status: "succeeded",

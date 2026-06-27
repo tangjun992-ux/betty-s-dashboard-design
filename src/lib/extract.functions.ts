@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { consumeCredits } from "./credits.server";
 
 const COST_EXTRACT = 2;
 const MAX_BYTES = 20 * 1024 * 1024;
@@ -129,10 +130,9 @@ export const extractPrompt = createServerFn({ method: "POST" })
       params: { source: data.source, url: data.url ?? null, image_path: data.imagePath ?? null, mime },
     }).select("id").single();
 
-    await supabase.from("credits_ledger").insert({
-      user_id: userId, delta: -COST_EXTRACT, reason: "extract_prompt", ref_id: row?.id ?? null,
+    await consumeCredits(supabase, {
+      userId, amount: COST_EXTRACT, reason: "extract_prompt", refId: row?.id ?? undefined, idem: row?.id ? `extract:${row.id}` : undefined,
     });
-    await supabase.from("profiles").update({ credits: prof.credits - COST_EXTRACT }).eq("id", userId);
 
     return { id: row?.id ?? null, prompt, cost: COST_EXTRACT };
   });

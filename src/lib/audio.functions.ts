@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { consumeCredits } from "./credits.server";
 
 const AudioInput = z.object({
   text: z.string().min(2).max(4000),
@@ -68,10 +69,9 @@ export const generateAudio = createServerFn({ method: "POST" })
         status: "succeeded", asset_url: url, thumb_url: url,
       }).eq("id", row.id);
 
-      await supabase.from("credits_ledger").insert({
-        user_id: userId, delta: -COST_AUDIO, reason: "audio_generation", ref_id: row.id,
+      await consumeCredits(supabase, {
+        userId, amount: COST_AUDIO, reason: "audio_generation", refId: row.id, idem: `audio:${row.id}`,
       });
-      await supabase.from("profiles").update({ credits: prof.credits - COST_AUDIO }).eq("id", userId);
 
       return { id: row.id, url };
     } catch (err) {
