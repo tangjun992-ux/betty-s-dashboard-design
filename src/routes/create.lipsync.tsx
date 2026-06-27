@@ -6,6 +6,7 @@ import { Search, Sparkles, FolderOpen, Image as ImageIcon, Film, User2, Clock, U
 import { AppShell } from "@/components/AppShell";
 import { listMyGenerations } from "@/lib/generations.functions";
 import { useSession } from "@/lib/use-session";
+import { LipsyncStep2, type LipsyncSource } from "@/components/create/LipsyncStep2";
 import bannerInfluencers from "@/assets/banner-influencers.jpg";
 import bannerTutorial from "@/assets/banner-tutorial.jpg";
 import bannerEarn from "@/assets/banner-earn.jpg";
