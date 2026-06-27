@@ -13,6 +13,7 @@ import {
   AspectPopover, ResolutionPopover, DurationPopover, BatchPopover, MorePopover,
   type AdvancedOptions,
 } from "@/components/create/VideoOptionPopovers";
+import { FrameUploader } from "@/components/create/FrameUploader";
 import { generateVideo, pollGeneration } from "@/lib/video.functions";
 import { VIDEO_MODELS, type Aspect, type VideoResolution } from "@/lib/model-registry";
 import { useSession } from "@/lib/use-session";
@@ -41,6 +42,8 @@ function VideoPage() {
   const [advanced, setAdvanced] = useState<AdvancedOptions>({
     clearOnSubmit: true, fallbackModels: false, autoRetries: true,
   });
+  const [startFrameUrl, setStartFrameUrl] = useState<string | null>(null);
+  const [endFrameUrl, setEndFrameUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
@@ -57,6 +60,8 @@ function VideoPage() {
     // Server only supports 480p/720p/1080p — clamp 4K down
     const safeRes: VideoResolution[] = model.resolutions.filter((r) => r !== "4K");
     if (!safeRes.includes(resolution)) setResolution(safeRes.includes("720p") ? "720p" : safeRes[0] ?? "720p");
+    if (!model.supportsStartFrame) setStartFrameUrl(null);
+    if (!model.supportsEndFrame) setEndFrameUrl(null);
   }, [model]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const cost = useMemo(() => model.cost(duration, resolution) * batch, [model, duration, resolution, batch]);
@@ -97,11 +102,19 @@ function VideoPage() {
   async function onSubmit() {
     if (!user) { navigate({ to: "/auth" }); return; }
     if (!prompt.trim() || busy) return;
+    if (endFrameUrl && !startFrameUrl) {
+      toast.error("Add a Start frame before End frame");
+      return;
+    }
     setBusy(true); setResult(null);
     const safeRes: VideoResolution = resolution === "4K" ? "1080p" : resolution;
     const t = toast.loading(`Queued — ${model.label} ~1–2 min…`);
     try {
-      const r = await submit({ data: { prompt: prompt.trim(), model: model.id, aspect, duration, resolution: safeRes } });
+      const r = await submit({ data: {
+        prompt: prompt.trim(), model: model.id, aspect, duration, resolution: safeRes,
+        startFrameUrl: startFrameUrl ?? undefined,
+        endFrameUrl: endFrameUrl ?? undefined,
+      } });
       setJobId(r.id);
       if (advanced.clearOnSubmit) setPrompt("");
       startPolling(r.id, t);
@@ -132,7 +145,12 @@ function VideoPage() {
               leading={
                 <div className="flex gap-2">
                   <RefTile label="Elements" icon={Puzzle} />
-                  <RefTile label="Ref Images" icon={Images} />
+                  {model.supportsStartFrame && (
+                    <FrameUploader label="Start frame" value={startFrameUrl} onChange={setStartFrameUrl} disabled={busy} />
+                  )}
+                  {model.supportsEndFrame && (
+                    <FrameUploader label="End frame" value={endFrameUrl} onChange={setEndFrameUrl} disabled={busy} />
+                  )}
                   <RefTile label="Ref Video" icon={Film} />
                   <RefTile label="Ref Audio" icon={AudioLines} />
                 </div>
