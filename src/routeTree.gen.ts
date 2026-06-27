@@ -36,6 +36,7 @@ import { Route as CreateAudioRouteImport } from './routes/create.audio'
 import { Route as CreateAgentRouteImport } from './routes/create.agent'
 import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as AdminWebhooksRouteImport } from './routes/admin.webhooks'
+import { Route as AccountUsageRouteImport } from './routes/account.usage'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 
 const ToolsRoute = ToolsRouteImport.update({
@@ -173,6 +174,11 @@ const AdminWebhooksRoute = AdminWebhooksRouteImport.update({
   path: '/admin/webhooks',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountUsageRoute = AccountUsageRouteImport.update({
+  id: '/account/usage',
+  path: '/account/usage',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPaymentsWebhookRoute =
   ApiPublicPaymentsWebhookRouteImport.update({
     id: '/api/public/payments/webhook',
@@ -193,6 +199,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/tools': typeof ToolsRoute
+  '/account/usage': typeof AccountUsageRoute
   '/admin/webhooks': typeof AdminWebhooksRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/create/agent': typeof CreateAgentRoute
@@ -223,6 +230,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/tools': typeof ToolsRoute
+  '/account/usage': typeof AccountUsageRoute
   '/admin/webhooks': typeof AdminWebhooksRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/create/agent': typeof CreateAgentRoute
@@ -254,6 +262,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/tools': typeof ToolsRoute
+  '/account/usage': typeof AccountUsageRoute
   '/admin/webhooks': typeof AdminWebhooksRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/create/agent': typeof CreateAgentRoute
@@ -286,6 +295,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/sitemap.xml'
     | '/tools'
+    | '/account/usage'
     | '/admin/webhooks'
     | '/checkout/return'
     | '/create/agent'
@@ -316,6 +326,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/sitemap.xml'
     | '/tools'
+    | '/account/usage'
     | '/admin/webhooks'
     | '/checkout/return'
     | '/create/agent'
@@ -346,6 +357,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/sitemap.xml'
     | '/tools'
+    | '/account/usage'
     | '/admin/webhooks'
     | '/checkout/return'
     | '/create/agent'
@@ -377,6 +389,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ToolsRoute: typeof ToolsRoute
+  AccountUsageRoute: typeof AccountUsageRoute
   AdminWebhooksRoute: typeof AdminWebhooksRoute
   CheckoutReturnRoute: typeof CheckoutReturnRoute
   UHandleRoute: typeof UHandleRoute
@@ -574,6 +587,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminWebhooksRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account/usage': {
+      id: '/account/usage'
+      path: '/account/usage'
+      fullPath: '/account/usage'
+      preLoaderRoute: typeof AccountUsageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/webhook': {
       id: '/api/public/payments/webhook'
       path: '/api/public/payments/webhook'
@@ -630,6 +650,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ToolsRoute: ToolsRoute,
+  AccountUsageRoute: AccountUsageRoute,
   AdminWebhooksRoute: AdminWebhooksRoute,
   CheckoutReturnRoute: CheckoutReturnRoute,
   UHandleRoute: UHandleRoute,
