@@ -86,10 +86,11 @@ export const runImageEdit = createServerFn({ method: "POST" })
       body = { image_url: imageUrl, mask_url: ms.signedUrl, prompt: data.prompt };
     }
 
+    const editKind = data.action === "upscale" ? "upscale" : "image";
     const { data: row, error: insErr } = await supabase
       .from("generations").insert({
         user_id: userId,
-        kind: "image_edit",
+        kind: editKind,
         model: modelPath,
         prompt: data.prompt ?? "",
         params: { action: data.action, provider: "fal", model_path: modelPath, cost },
