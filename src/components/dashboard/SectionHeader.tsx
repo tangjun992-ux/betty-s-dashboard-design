@@ -11,10 +11,10 @@ export function SectionHeader({
   showArrows?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between mb-5">
-      <div className="flex items-center gap-2 text-foreground">
-        <Icon className="size-4 text-muted-foreground" />
-        <h2 className="text-[15px] font-semibold">{title}</h2>
+    <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center gap-2.5 text-foreground">
+        <Icon className="size-[18px] text-muted-foreground" />
+        <h2 className="text-[17px] font-semibold tracking-tight">{title}</h2>
       </div>
       {showArrows && (
         <div className="flex items-center gap-1.5">
