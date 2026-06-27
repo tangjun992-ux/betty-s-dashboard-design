@@ -79,8 +79,9 @@ function VideoPage() {
 
   // Coerce params when model changes
   useEffect(() => {
-    if (!model.aspects.includes(aspect)) setAspect(model.aspects.includes("9:16") ? "9:16" : model.aspects[0]);
-    if (!model.durations.includes(duration)) setDuration(model.durations[model.durations.length - 1]);
+    if (!model.aspects.includes(aspect)) setAspect(model.aspects.includes("16:9") ? "16:9" : model.aspects[0]);
+    if (!model.durations.includes(duration)) setDuration(model.durations.includes(8) ? 8 : model.durations[0]);
+
     // Server only supports 480p/720p/1080p — clamp 4K down
     const safeRes: VideoResolution[] = model.resolutions.filter((r) => r !== "4K");
     if (!safeRes.includes(resolution)) setResolution(safeRes.includes("720p") ? "720p" : safeRes[0] ?? "720p");
