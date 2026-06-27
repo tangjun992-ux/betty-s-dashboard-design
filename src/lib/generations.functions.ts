@@ -50,6 +50,9 @@ export const generateImage = createServerFn({ method: "POST" })
       throw new Error(`${model.label} supports max ${model.maxBatch} per run`);
     }
 
+    // Rate limit: protects against runaway loops, bots, and credit-burn scripts.
+    await enforceRateLimit(supabase, userId, "image:submit", 20, 60);
+
     const totalCost = model.cost * data.batch;
 
     const { data: row, error: insErr } = await supabase
