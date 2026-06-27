@@ -36,6 +36,8 @@
   --color-brand-foreground: var(--brand-foreground);
 
   --font-display: "Geist", "Inter", system-ui, sans-serif;
+  --font-sans: "Inter", "Geist", system-ui, sans-serif;
+  --font-mono: "Geist Mono", "JetBrains Mono", ui-monospace, monospace;
 }
 
 :root {
