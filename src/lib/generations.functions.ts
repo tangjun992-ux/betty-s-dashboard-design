@@ -169,10 +169,10 @@ export const listMyGenerations = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("generations")
-      .select("id,kind,model,prompt,status,asset_url,thumb_url,created_at,like_count")
+      .select("id,kind,model,prompt,status,asset_url,thumb_url,created_at,like_count,is_favorite,folder_id,width,height,duration_ms")
       .eq("user_id", context.userId)
       .order("created_at", { ascending: false })
-      .limit(60);
+      .limit(120);
     if (error) throw new Error(error.message);
     return data ?? [];
   });
