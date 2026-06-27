@@ -13,6 +13,7 @@ import { ModePill, ModelPill, type AgentMode, type AgentModel } from "@/componen
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { sendAgentMessage } from "@/lib/agent.functions";
 import { useSession } from "@/lib/use-session";
+import { CreateJobsRail } from "@/components/create/CreateJobsRail";
 import { useNavigate } from "@tanstack/react-router";
 import bannerInfluencers from "@/assets/banner-influencers.jpg";
 import bannerTutorial from "@/assets/banner-tutorial.jpg";
