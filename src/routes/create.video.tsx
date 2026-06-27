@@ -242,16 +242,43 @@ function VideoPage() {
                 </>
               }
             />
-            {(busy || result) && (
-              <div className="mt-4 rounded-2xl border border-border/60 bg-surface/70 p-4 min-h-[200px] grid place-items-center">
-                {busy && !result ? (
-                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                    <Loader2 className="size-6 animate-spin text-brand" />
-                    <p className="text-xs">Rendering with {model.label}… {jobId ? "(polling)" : ""}</p>
+            {(phase !== "idle" || result) && (
+              <div className="mt-4 rounded-2xl border border-border/60 bg-surface/70 p-4">
+                <div className="flex items-center justify-between text-[12.5px]">
+                  <div className="flex items-center gap-1.5">
+                    {phase === "queued" && <><Clock className="size-3.5 text-muted-foreground" /><span className="text-muted-foreground">Queued · {model.label}</span></>}
+                    {phase === "running" && <><Loader2 className="size-3.5 animate-spin text-brand" /><span>Rendering · {model.label}</span></>}
+                    {phase === "finalizing" && <><Loader2 className="size-3.5 animate-spin text-brand" /><span>Finalizing…</span></>}
+                    {phase === "completed" && <><CheckCircle2 className="size-3.5 text-emerald-400" /><span className="text-emerald-300">Completed</span></>}
+                    {phase === "failed" && <><XCircle className="size-3.5 text-red-400" /><span className="text-red-300">{errMsg ?? "Failed"}</span></>}
+                    {phase === "cancelled" && <><XCircle className="size-3.5 text-amber-400" /><span className="text-amber-300">{errMsg ?? "Cancelled"}</span></>}
                   </div>
-                ) : result ? (
-                  <video src={result} controls className="max-h-[480px] rounded-xl" />
-                ) : null}
+                  <div className="flex items-center gap-3 text-muted-foreground tabular-nums">
+                    <span>{elapsed.toFixed(1)}s</span>
+                    <span>{Math.round(progress)}%</span>
+                    {busy && (
+                      <button onClick={onCancel} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-border/60 hover:bg-white/5 text-foreground" aria-label="Cancel generation">
+                        <X className="size-3" /> Cancel
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="mt-2 h-1.5 rounded-full bg-white/5 overflow-hidden">
+                  <div
+                    className={`h-full transition-[width] duration-300 ${
+                      phase === "failed" ? "bg-red-500"
+                      : phase === "cancelled" ? "bg-amber-500"
+                      : phase === "completed" ? "bg-emerald-500"
+                      : "bg-brand"
+                    } ${busy ? "animate-pulse" : ""}`}
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                {result && (
+                  <div className="mt-3 grid place-items-center">
+                    <video src={result} controls className="max-h-[480px] rounded-xl" />
+                  </div>
+                )}
               </div>
             )}
           </>
