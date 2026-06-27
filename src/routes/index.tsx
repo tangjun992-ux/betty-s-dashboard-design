@@ -45,9 +45,9 @@ export const Route = createFileRoute("/")({
 });
 
 const banners = [
-  { image: bannerEarn, tag: "New", tagClass: "bg-emerald-500/15 text-emerald-400", title: "Get paid to create — join a Betty Earn campaign" },
-  { image: bannerInfluencers, tag: "Tutorial", tagClass: "bg-sky-500/15 text-sky-400", title: "Learn how to create realistic AI UGC" },
-  { image: bannerTutorial, tag: "Tutorial", tagClass: "bg-sky-500/15 text-sky-400", title: "Learn to create consistent long-form videos" },
+  { image: bannerEarn, tag: "New", tagClass: "bg-emerald-500/15 text-emerald-400", title: "Get paid to create — join a Betty Earn campaign", to: "/earn" },
+  { image: bannerInfluencers, tag: "Tutorial", tagClass: "bg-sky-500/15 text-sky-400", title: "Learn how to create realistic AI UGC", to: "/explore" },
+  { image: bannerTutorial, tag: "Tutorial", tagClass: "bg-sky-500/15 text-sky-400", title: "Learn to create consistent long-form videos", to: "/explore" },
 ];
 
 const popularTools = [
