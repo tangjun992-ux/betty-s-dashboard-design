@@ -41,9 +41,34 @@
   --color-accent-amber: var(--accent-amber);
   --color-accent-rose: var(--accent-rose);
 
+  /* Surface tiers (base → card → elevated) */
+  --color-surface-base: var(--background);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-hairline: var(--hairline);
+  --color-hairline-strong: var(--hairline-strong);
+
   --font-display: "Geist", "Inter", system-ui, sans-serif;
   --font-sans: "Inter", "Geist", system-ui, sans-serif;
   --font-mono: "Geist Mono", "JetBrains Mono", ui-monospace, monospace;
+
+  /* Type scale — Yapper-aligned rhythm */
+  --text-2xs: 0.6875rem;   /* 11 */
+  --text-xs:  0.75rem;     /* 12 */
+  --text-sm:  0.8125rem;   /* 13 */
+  --text-base: 0.875rem;   /* 14 */
+  --text-md:  0.9375rem;   /* 15 */
+  --text-lg:  1.0625rem;   /* 17 — section titles */
+  --text-xl:  1.25rem;     /* 20 */
+  --text-2xl: 1.5rem;      /* 24 */
+  --text-3xl: 1.875rem;    /* 30 */
+  --text-4xl: 2.25rem;     /* 36 */
+  --text-5xl: 2.75rem;     /* 44 */
+
+  --tracking-tightish: -0.011em;
+  --tracking-tight: -0.018em;
+  --tracking-display: -0.025em;
 }
 
 :root {
@@ -56,10 +81,18 @@
   --surface: oklch(0.18 0.015 270);
   --surface-hover: oklch(0.22 0.018 270);
 
-  --card: oklch(0.18 0.015 270);
+  /* 3-tier surface system */
+  --surface-1: oklch(0.165 0.014 270);   /* card resting */
+  --surface-2: oklch(0.205 0.017 270);   /* card hover / nested */
+  --surface-3: oklch(0.245 0.020 270);   /* elevated panel / popover */
+
+  --hairline: oklch(1 0 0 / 0.06);        /* near-invisible divider */
+  --hairline-strong: oklch(1 0 0 / 0.10); /* visible border */
+
+  --card: oklch(0.165 0.014 270);
   --card-foreground: oklch(0.98 0.003 270);
 
-  --popover: oklch(0.18 0.015 270);
+  --popover: oklch(0.205 0.017 270);
   --popover-foreground: oklch(0.98 0.003 270);
 
   --primary: oklch(0.98 0.003 270);
@@ -77,8 +110,8 @@
   --destructive: oklch(0.62 0.22 25);
   --destructive-foreground: oklch(0.98 0.005 270);
 
-  --border: oklch(0.26 0.018 270);
-  --input: oklch(0.26 0.018 270);
+  --border: oklch(1 0 0 / 0.08);
+  --input: oklch(1 0 0 / 0.10);
   --ring: oklch(0.62 0.2 280);
 
   /* Yapper-style electric indigo brand (tightened from violet) */
@@ -96,6 +129,8 @@
   --gradient-brand: linear-gradient(135deg, oklch(0.62 0.20 258), oklch(0.66 0.21 285));
   --gradient-brand-soft: linear-gradient(135deg, oklch(0.64 0.20 268 / 0.18), oklch(0.66 0.21 285 / 0.18));
   --shadow-glow: 0 8px 32px -8px color-mix(in oklab, var(--brand) 55%, transparent);
+  --shadow-elev-1: 0 1px 0 0 oklch(1 0 0 / 0.04), 0 1px 2px -1px oklch(0 0 0 / 0.4);
+  --shadow-elev-2: 0 8px 24px -12px oklch(0 0 0 / 0.55);
 }
 
 @layer base {
@@ -105,8 +140,15 @@
   html, body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: var(--font-display);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01", "ss03";
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, h4, h5 {
+    font-family: var(--font-display);
+    letter-spacing: var(--tracking-tight);
   }
 }
 
@@ -114,3 +156,10 @@
   &::-webkit-scrollbar { display: none; }
   scrollbar-width: none;
 }
+
+@utility surface-1 { background-color: var(--surface-1); }
+@utility surface-2 { background-color: var(--surface-2); }
+@utility surface-3 { background-color: var(--surface-3); }
+@utility hairline { border-color: var(--hairline); }
+@utility hairline-strong { border-color: var(--hairline-strong); }
+
