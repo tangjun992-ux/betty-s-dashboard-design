@@ -194,6 +194,8 @@ function ImagePage() {
     startProgress();
     const controller = new AbortController();
     abortRef.current = controller;
+    const startedAt = Date.now();
+    track("image_generate_submit", { model: activeModel.id, aspect: activeAspect, quality: activeQuality, batch: activeBatch, cost: activeModel.cost * activeBatch });
     const t = toast.loading(`Queued · ${activeModel.label}`);
     try {
       toast.loading(`Generating with ${activeModel.label}…`, { id: t });
@@ -206,13 +208,16 @@ function ImagePage() {
       endProgress("ok");
       if (advanced.clearOnSubmit && !actualParams) setPrompt("");
       toast.success("Image ready", { id: t });
+      track("image_generate_success", { model: activeModel.id, elapsed_ms: Date.now() - startedAt });
     } catch (err) {
       if (controller.signal.aborted) {
         toast.message("Generation cancelled", { id: t });
+        track("image_generate_cancel", { model: activeModel.id, elapsed_ms: Date.now() - startedAt });
       } else {
         const msg = err instanceof Error ? err.message : "Generation failed";
         endProgress("fail", msg);
         toast.error(msg, { id: t });
+        track("image_generate_fail", { model: activeModel.id, error: msg, elapsed_ms: Date.now() - startedAt });
       }
     } finally {
       if (abortRef.current === controller) abortRef.current = null;
