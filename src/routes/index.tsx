@@ -107,7 +107,7 @@ function Dashboard() {
           </div>
         </section>
 
-        <div className="px-6 lg:px-8 space-y-12">
+        <div className="px-6 lg:px-8 space-y-14">
           <section>
             <SectionHeader icon={Bookmark} title="Popular Tools" showArrows={false} />
             <div className="flex flex-wrap gap-x-3 gap-y-3">
@@ -117,17 +117,18 @@ function Dashboard() {
 
           <section>
             <SectionHeader icon={Film} title="Video Tools" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-7">
               {videoTools.map((t) => <MediaCard key={t.title} {...t} />)}
             </div>
           </section>
 
           <section>
             <SectionHeader icon={Brush} title="Image Tools" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-7">
               {imageTools.map((t) => <MediaCard key={t.title} {...t} />)}
             </div>
           </section>
+
 
           <section>
             <div className="flex items-center justify-between mb-6">
