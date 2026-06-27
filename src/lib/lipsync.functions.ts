@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { consumeCredits, refundCredits } from "./credits.server";
+import { enforceRateLimit } from "./rate-limit.server";
 
 const LIPSYNC_MODEL = "fal-ai/sync-lipsync/v2";
 const COST_LIPSYNC = 60;
