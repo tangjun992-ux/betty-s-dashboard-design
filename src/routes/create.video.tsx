@@ -24,8 +24,14 @@ import toolMotion from "@/assets/tool-motion.jpg";
 import toolAvatar from "@/assets/tool-avatar.jpg";
 import toolVideogen from "@/assets/tool-videogen.jpg";
 
+type VideoSearch = { prompt?: string; model?: string; aspect?: string };
 export const Route = createFileRoute("/create/video")({
   head: () => ({ meta: [{ title: "Video — Betty" }] }),
+  validateSearch: (s: Record<string, unknown>): VideoSearch => ({
+    prompt: typeof s.prompt === "string" ? s.prompt : undefined,
+    model: typeof s.model === "string" ? s.model : undefined,
+    aspect: typeof s.aspect === "string" ? s.aspect : undefined,
+  }),
   component: VideoPage,
 });
 
@@ -34,9 +40,16 @@ const DEFAULT_MODEL = VIDEO_MODELS.find((m) => m.key === "seedance-2-fast") ?? V
 function VideoPage() {
   const navigate = useNavigate();
   const { user, loading } = useSession();
-  const [prompt, setPrompt] = useState("");
-  const [model, setModel] = useState(DEFAULT_MODEL);
-  const [aspect, setAspect] = useState<Aspect>("9:16");
+  const search = Route.useSearch();
+  const initialModel = useMemo(() => {
+    const m = search.model ? VIDEO_MODELS.find((x) => x.key === search.model) : null;
+    return m ?? DEFAULT_MODEL;
+  }, []); // eslint-disable-line
+  const [prompt, setPrompt] = useState<string>(search.prompt ?? "");
+  const [model, setModel] = useState(initialModel);
+  const [aspect, setAspect] = useState<Aspect>(
+    (search.aspect as Aspect) ?? "9:16",
+  );
   const [duration, setDuration] = useState<number>(15);
   const [resolution, setResolution] = useState<VideoResolution>("720p");
   const [batch, setBatch] = useState(1);

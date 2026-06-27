@@ -45,6 +45,27 @@ type Card = {
   likes: number;
 };
 
+const MODEL_KEY: Record<string, string> = {
+  "GPT Image 2": "gpt-image-2",
+  "Nano Banana": "nano-banana",
+  "Flux 1.1": "flux-1-1",
+  "Seedance 2.0": "seedance-2",
+  "Kling 3.0": "kling-v2-1-master",
+  "Veo 3.1": "veo-3-1",
+};
+function promptFor(card: Card) {
+  return card.kind === "video"
+    ? `Cinematic ${card.model} render — slow dolly-in, dramatic rim lighting, 35mm, shallow depth of field`
+    : `Editorial ${card.model} render — high-detail portrait, dramatic rim lighting, magazine cover composition`;
+}
+function remixSearch(card: Card) {
+  return {
+    prompt: promptFor(card),
+    model: MODEL_KEY[card.model],
+    aspect: card.ratio === "9/16" ? "9:16" : card.ratio === "1/1" ? "1:1" : "16:9",
+  };
+}
+
 const pool: string[] = [
   toolSeedance, toolMotion, toolAvatar, toolVideogen, toolProduct, toolHeadshot,
   toolImagegen, bannerInfluencers, bannerTutorial, bannerEarn,
@@ -293,6 +314,11 @@ function ExplorePage() {
 }
 
 function DetailPanel({ card, onClose }: { card: Card; onClose: () => void }) {
+  const navigate = useNavigate();
+  function recreate() {
+    onClose();
+    navigate({ to: card.kind === "video" ? "/create/video" : "/create/image", search: remixSearch(card) });
+  }
   return (
     <div className="flex flex-col h-full">
       <div className="relative bg-surface" style={{ aspectRatio: card.ratio }}>
@@ -331,10 +357,10 @@ function DetailPanel({ card, onClose }: { card: Card; onClose: () => void }) {
           lighting, shot on {card.model}, 35mm, shallow depth of field, magazine cover composition.
         </div>
         <div className="flex gap-2">
-          <button className="flex-1 h-10 rounded-md bg-foreground text-background text-[13px] font-semibold inline-flex items-center justify-center gap-1.5 hover:opacity-90">
+          <button onClick={recreate} className="flex-1 h-10 rounded-md bg-foreground text-background text-[13px] font-semibold inline-flex items-center justify-center gap-1.5 hover:opacity-90">
             <RotateCcw className="size-3.5" /> Recreate
           </button>
-          <button className="flex-1 h-10 rounded-md bg-surface text-foreground text-[13px] font-medium inline-flex items-center justify-center gap-1.5 hover:bg-surface-hover">
+          <button onClick={recreate} className="flex-1 h-10 rounded-md bg-surface text-foreground text-[13px] font-medium inline-flex items-center justify-center gap-1.5 hover:bg-surface-hover">
             <Repeat2 className="size-3.5" /> Reuse
           </button>
         </div>
@@ -702,11 +728,16 @@ function WaterfallFeed({ kind, sort, onOpen }: { kind: Kind | "all"; sort: strin
 /* ───────────────────────── Card ──────────────────────────────────────────── */
 
 function ExploreCard({ card, full = false, onOpen }: { card: Card; full?: boolean; onOpen?: (c: Card) => void }) {
+  const navigate = useNavigate();
   const [liked, setLiked] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
   const [imgKey, setImgKey] = useState(0);
   const imgRef = useRef<HTMLImageElement | null>(null);
+  const onRecreate = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate({ to: card.kind === "video" ? "/create/video" : "/create/image", search: remixSearch(card) });
+  };
 
   // Catch "complete-before-onload" cache hits.
   useEffect(() => {
@@ -793,10 +824,10 @@ function ExploreCard({ card, full = false, onOpen }: { card: Card; full?: boolea
 
         {loaded && !errored && (
           <div className="absolute inset-x-2 bottom-2 flex gap-1.5 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200">
-            <button className="flex-1 h-7 rounded-md bg-white/95 text-[11px] font-semibold text-background inline-flex items-center justify-center gap-1 hover:bg-white">
+            <button onClick={onRecreate} className="flex-1 h-7 rounded-md bg-white/95 text-[11px] font-semibold text-background inline-flex items-center justify-center gap-1 hover:bg-white">
               <RotateCcw className="size-3" /> Recreate
             </button>
-            <button className="flex-1 h-7 rounded-md bg-white/10 backdrop-blur text-white text-[11px] font-medium inline-flex items-center justify-center gap-1 hover:bg-white/20">
+            <button onClick={onRecreate} className="flex-1 h-7 rounded-md bg-white/10 backdrop-blur text-white text-[11px] font-medium inline-flex items-center justify-center gap-1 hover:bg-white/20">
               <Repeat2 className="size-3" /> Reuse
             </button>
           </div>
