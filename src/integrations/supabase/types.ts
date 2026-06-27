@@ -217,8 +217,10 @@ export type Database = {
           created_at: string
           duration_ms: number | null
           error: string | null
+          folder_id: string | null
           height: number | null
           id: string
+          is_favorite: boolean
           is_public: boolean
           kind: Database["public"]["Enums"]["generation_kind"]
           like_count: number
@@ -236,8 +238,10 @@ export type Database = {
           created_at?: string
           duration_ms?: number | null
           error?: string | null
+          folder_id?: string | null
           height?: number | null
           id?: string
+          is_favorite?: boolean
           is_public?: boolean
           kind: Database["public"]["Enums"]["generation_kind"]
           like_count?: number
@@ -255,8 +259,10 @@ export type Database = {
           created_at?: string
           duration_ms?: number | null
           error?: string | null
+          folder_id?: string | null
           height?: number | null
           id?: string
+          is_favorite?: boolean
           is_public?: boolean
           kind?: Database["public"]["Enums"]["generation_kind"]
           like_count?: number
@@ -269,7 +275,15 @@ export type Database = {
           user_id?: string
           width?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "generations_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "folders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       likes: {
         Row: {
