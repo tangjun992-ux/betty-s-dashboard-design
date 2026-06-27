@@ -13,6 +13,7 @@ import { AppShell } from '@/components/AppShell';
 import { getStripeEnvironment } from '@/lib/stripe';
 import { changeSubscriptionPlan } from '@/lib/subscription.functions';
 import { cn } from '@/lib/utils';
+import { track } from '@/lib/analytics';
 
 export const Route = createFileRoute('/pricing')({
   component: PricingPage,
