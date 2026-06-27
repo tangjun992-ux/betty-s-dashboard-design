@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { consumeCredits } from "./credits.server";
+import { consumeCredits, refundCredits } from "./credits.server";
 
 const REMOVE_BG_MODEL = "fal-ai/birefnet/v2";
 const UPSCALE_MODEL = "fal-ai/clarity-upscaler";
@@ -61,9 +61,6 @@ export const runImageEdit = createServerFn({ method: "POST" })
     if (!data.imagePath.startsWith(`${userId}/`)) throw new Error("Invalid file path");
 
     const cost = COST[data.action];
-    const { data: prof } = await supabase
-      .from("profiles").select("credits").eq("id", userId).maybeSingle();
-    if (!prof || prof.credits < cost) throw new Error(`Need ${cost} credits for this action.`);
 
     const { data: signed } = await supabase.storage.from("generations")
       .createSignedUrl(data.imagePath, 60 * 60);
@@ -99,48 +96,52 @@ export const runImageEdit = createServerFn({ method: "POST" })
       }).select("id").single();
     if (insErr || !row) throw new Error(insErr?.message ?? "Failed to start job");
 
-    // Use sync endpoint for editor actions (fast, single image)
-    const r = await fetch(`https://fal.run/${modelPath}`, {
-      method: "POST",
-      headers: { Authorization: `Key ${falKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (!r.ok) {
-      const t = await r.text();
-      await supabase.from("generations").update({ status: "failed", error: t.slice(0, 300) }).eq("id", row.id);
-      throw new Error(`Image editor error (${r.status}): ${t.slice(0, 200)}`);
-    }
-    const json = await r.json() as { image?: { url: string }; images?: { url: string }[] };
-    const outUrl = json.image?.url ?? json.images?.[0]?.url;
-    if (!outUrl) {
-      await supabase.from("generations").update({ status: "failed", error: "no output url" }).eq("id", row.id);
-      throw new Error("Editor returned no image");
-    }
-
-    // Mirror result into storage so it persists
-    const { bin, contentType } = await fetchAsBlob(outUrl);
-    const ext = (contentType.split("/")[1] || "png").split(";")[0];
-    const outPath = `${userId}/editor/out/${Date.now()}-${data.action}.${ext}`;
-    const { error: upErr } = await supabase.storage.from("generations")
-      .upload(outPath, bin, { contentType, upsert: false });
-    let finalUrl = outUrl;
-    if (!upErr) {
-      const { data: pub } = await supabase.storage.from("generations").createSignedUrl(outPath, 60 * 60 * 24 * 7);
-      if (pub?.signedUrl) finalUrl = pub.signedUrl;
-    }
-
+    // Atomic: charge first, refund on downstream failure.
     await consumeCredits(supabase, {
       userId, amount: cost, reason: `editor:${data.action}`, refId: row.id, idem: `editor:${row.id}`,
     });
 
-    await supabase.from("generations").update({
-      status: "succeeded",
-      asset_url: finalUrl,
-      thumb_url: finalUrl,
-      params: { action: data.action, provider: "fal", model_path: modelPath, cost, source_path: data.imagePath },
-    }).eq("id", row.id);
+    try {
+      const r = await fetch(`https://fal.run/${modelPath}`, {
+        method: "POST",
+        headers: { Authorization: `Key ${falKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!r.ok) {
+        const t = await r.text();
+        throw new Error(`Image editor error (${r.status}): ${t.slice(0, 200)}`);
+      }
+      const json = await r.json() as { image?: { url: string }; images?: { url: string }[] };
+      const outUrl = json.image?.url ?? json.images?.[0]?.url;
+      if (!outUrl) throw new Error("Editor returned no image");
 
-    return { id: row.id, url: finalUrl, cost };
+      const { bin, contentType } = await fetchAsBlob(outUrl);
+      const ext = (contentType.split("/")[1] || "png").split(";")[0];
+      const outPath = `${userId}/editor/out/${Date.now()}-${data.action}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("generations")
+        .upload(outPath, bin, { contentType, upsert: false });
+      let finalUrl = outUrl;
+      if (!upErr) {
+        const { data: pub } = await supabase.storage.from("generations").createSignedUrl(outPath, 60 * 60 * 24 * 7);
+        if (pub?.signedUrl) finalUrl = pub.signedUrl;
+      }
+
+      await supabase.from("generations").update({
+        status: "succeeded",
+        asset_url: finalUrl,
+        thumb_url: finalUrl,
+        params: { action: data.action, provider: "fal", model_path: modelPath, cost, source_path: data.imagePath },
+      }).eq("id", row.id);
+
+      return { id: row.id, url: finalUrl, cost };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "editor failed";
+      await refundCredits(supabase, {
+        userId, amount: cost, reason: `editor:${data.action}:refund`, refId: row.id, idem: `editor:refund:${row.id}`,
+      });
+      await supabase.from("generations").update({ status: "failed", error: msg.slice(0, 300) }).eq("id", row.id);
+      throw err;
+    }
   });
 
 export const EDITOR_COSTS = COST;

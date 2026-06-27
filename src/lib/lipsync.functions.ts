@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { consumeCredits } from "./credits.server";
+import { consumeCredits, refundCredits } from "./credits.server";
 
 const LIPSYNC_MODEL = "fal-ai/sync-lipsync/v2";
 const COST_LIPSYNC = 60;
@@ -42,12 +42,6 @@ export const generateLipsync = createServerFn({ method: "POST" })
     if (!falKey) throw new Error("Lipsync service not configured (FAL_KEY missing)");
     const { supabase, userId } = context;
 
-    const { data: prof } = await supabase
-      .from("profiles").select("credits").eq("id", userId).maybeSingle();
-    if (!prof || prof.credits < COST_LIPSYNC) {
-      throw new Error(`Need ${COST_LIPSYNC} credits to generate lipsync.`);
-    }
-
     const [videoUrl, audioUrl] = await Promise.all([
       resolveUrl(supabase, userId, data.videoSource),
       resolveUrl(supabase, userId, data.audioSource),
@@ -64,39 +58,39 @@ export const generateLipsync = createServerFn({ method: "POST" })
       }).select("id").single();
     if (insErr || !row) throw new Error(insErr?.message ?? "Failed to start lipsync job");
 
-    const submit = await fetch(`https://queue.fal.run/${LIPSYNC_MODEL}`, {
-      method: "POST",
-      headers: { Authorization: `Key ${falKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        video_url: videoUrl,
-        audio_url: audioUrl,
-        sync_mode: "cut_off",
-      }),
-    });
-    if (!submit.ok) {
-      const text = await submit.text();
-      await supabase.from("generations").update({
-        status: "failed", error: text.slice(0, 300),
-      }).eq("id", row.id);
-      throw new Error(`Lipsync provider error (${submit.status}): ${text.slice(0, 200)}`);
-    }
-    const submitJson = await submit.json() as { request_id?: string };
-    const requestId = submitJson.request_id;
-    if (!requestId) {
-      await supabase.from("generations").update({ status: "failed", error: "no request_id" }).eq("id", row.id);
-      throw new Error("Lipsync provider did not return a request id");
-    }
-
+    // Atomic: charge first, refund on any downstream failure.
     await consumeCredits(supabase, {
       userId, amount: COST_LIPSYNC, reason: "lipsync", refId: row.id, idem: `lipsync:${row.id}`,
     });
 
-    await supabase.from("generations").update({
-      status: "running",
-      params: { provider: "fal", model_path: LIPSYNC_MODEL, request_id: requestId, cost: COST_LIPSYNC },
-    }).eq("id", row.id);
+    try {
+      const submit = await fetch(`https://queue.fal.run/${LIPSYNC_MODEL}`, {
+        method: "POST",
+        headers: { Authorization: `Key ${falKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ video_url: videoUrl, audio_url: audioUrl, sync_mode: "cut_off" }),
+      });
+      if (!submit.ok) {
+        const text = await submit.text();
+        throw new Error(`Lipsync provider error (${submit.status}): ${text.slice(0, 200)}`);
+      }
+      const submitJson = await submit.json() as { request_id?: string };
+      const requestId = submitJson.request_id;
+      if (!requestId) throw new Error("Lipsync provider did not return a request id");
 
-    return { id: row.id, cost: COST_LIPSYNC };
+      await supabase.from("generations").update({
+        status: "running",
+        params: { provider: "fal", model_path: LIPSYNC_MODEL, request_id: requestId, cost: COST_LIPSYNC },
+      }).eq("id", row.id);
+
+      return { id: row.id, cost: COST_LIPSYNC };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "submission failed";
+      await refundCredits(supabase, {
+        userId, amount: COST_LIPSYNC, reason: "lipsync:refund", refId: row.id, idem: `lipsync:refund:${row.id}`,
+      });
+      await supabase.from("generations").update({ status: "failed", error: msg.slice(0, 300) }).eq("id", row.id);
+      throw err;
+    }
   });
 
 const UploadInput = z.object({
