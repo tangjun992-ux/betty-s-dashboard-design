@@ -14,6 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
+      assets: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          file_size: number | null
+          folder_id: string | null
+          generation_id: string | null
+          height: number | null
+          id: string
+          is_favorite: boolean
+          kind: string
+          metadata: Json
+          mime_type: string | null
+          model_used: string | null
+          prompt: string | null
+          source: string
+          thumb_url: string | null
+          updated_at: string
+          url: string
+          user_id: string
+          width: number | null
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          file_size?: number | null
+          folder_id?: string | null
+          generation_id?: string | null
+          height?: number | null
+          id?: string
+          is_favorite?: boolean
+          kind: string
+          metadata?: Json
+          mime_type?: string | null
+          model_used?: string | null
+          prompt?: string | null
+          source?: string
+          thumb_url?: string | null
+          updated_at?: string
+          url: string
+          user_id: string
+          width?: number | null
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          file_size?: number | null
+          folder_id?: string | null
+          generation_id?: string | null
+          height?: number | null
+          id?: string
+          is_favorite?: boolean
+          kind?: string
+          metadata?: Json
+          mime_type?: string | null
+          model_used?: string | null
+          prompt?: string | null
+          source?: string
+          thumb_url?: string | null
+          updated_at?: string
+          url?: string
+          user_id?: string
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assets_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "folders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assets_generation_id_fkey"
+            columns: ["generation_id"]
+            isOneToOne: false
+            referencedRelation: "generations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       credits_ledger: {
         Row: {
           created_at: string
@@ -76,6 +157,41 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      folders: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          parent_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          parent_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          parent_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "folders_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "folders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       follows: {
         Row: {
@@ -365,6 +481,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      consume_credits: {
+        Args: {
+          _amount: number
+          _idem?: string
+          _reason: string
+          _ref_id?: string
+          _user_id: string
+        }
+        Returns: number
+      }
+      get_usage_summary: { Args: { _user_id: string }; Returns: Json }
+      grant_monthly_credits: { Args: never; Returns: number }
       has_active_subscription: {
         Args: { check_env?: string; user_uuid: string }
         Returns: boolean
@@ -375,6 +503,17 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      monthly_grant_for_price: { Args: { _price_id: string }; Returns: number }
+      refund_credits: {
+        Args: {
+          _amount: number
+          _idem?: string
+          _reason: string
+          _ref_id?: string
+          _user_id: string
+        }
+        Returns: number
       }
     }
     Enums: {
